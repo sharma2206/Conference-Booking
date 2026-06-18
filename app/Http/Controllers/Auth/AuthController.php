@@ -30,9 +30,11 @@ class AuthController extends Controller
 
     public function me(): JsonResponse
     {
-        $user = auth('api')->user()->load('roles', 'permissions', 'department');
+        $user = auth('api')->user()->load('roles', 'department');
+        $userData = $user->toArray();
+        $userData['permissions'] = $user->getAllPermissions()->pluck('name')->values();
 
-        return response()->json(['data' => $user]);
+        return response()->json(['data' => $userData]);
     }
 
     public function logout(): JsonResponse

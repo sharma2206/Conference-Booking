@@ -15,27 +15,27 @@ import api from '../api/axios';
 import { API } from '../api/endpoints';
 
 const NAV_ITEMS = [
-  { path: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
-  { path: '/halls',       label: 'Halls',        icon: Building2 },
-  { path: '/bookings',    label: 'Bookings',     icon: CalendarDays },
-  { path: '/calendar',    label: 'Calendar',     icon: Calendar },
-  { path: '/approvals',   label: 'Approvals',    icon: ClipboardList },
-  { path: '/departments', label: 'Departments',  icon: Building },
-  { path: '/users',       label: 'Users',        icon: Users },
-  { path: '/roles',       label: 'Roles',        icon: Shield },
-  { path: '/visitors',    label: 'Visitors',     icon: UserCheck },
-  { path: '/catering',    label: 'Catering',     icon: Coffee },
-  { path: '/resources',   label: 'Resources',    icon: Package },
-  { path: '/reports',     label: 'Reports',      icon: BarChart3 },
-  { path: '/audit-logs',  label: 'Audit Logs',   icon: FileText },
-  { path: '/settings',    label: 'Settings',     icon: Settings },
+  { path: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard, permission: null },
+  { path: '/halls',       label: 'Halls',        icon: Building2,      permission: 'hall.view' },
+  { path: '/bookings',    label: 'Bookings',     icon: CalendarDays,   permission: 'booking.view' },
+  { path: '/calendar',    label: 'Calendar',     icon: Calendar,       permission: 'booking.view' },
+  { path: '/approvals',   label: 'Approvals',    icon: ClipboardList,  permission: 'booking.approve' },
+  { path: '/departments', label: 'Departments',  icon: Building,       permission: 'department.view' },
+  { path: '/users',       label: 'Users',        icon: Users,          permission: 'user.view' },
+  { path: '/roles',       label: 'Roles',        icon: Shield,         permission: 'role.view' },
+  { path: '/visitors',    label: 'Visitors',     icon: UserCheck,      permission: 'visitor.view' },
+  { path: '/catering',    label: 'Catering',     icon: Coffee,         permission: 'catering.view' },
+  { path: '/resources',   label: 'Resources',    icon: Package,        permission: 'resource.view' },
+  { path: '/reports',     label: 'Reports',      icon: BarChart3,      permission: 'report.view' },
+  { path: '/audit-logs',  label: 'Audit Logs',   icon: FileText,       permission: 'audit.view' },
+  { path: '/settings',    label: 'Settings',     icon: Settings,       permission: 'settings.view' },
 ];
 
-function SidebarContent({ collapsed, onLinkClick }) {
+function SidebarContent({ collapsed, onLinkClick, visibleItems }) {
   const location = useLocation();
   return (
     <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5" aria-label="Main navigation">
-      {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+      {visibleItems.map(({ path, label, icon: Icon }) => {
         const active = location.pathname === path || location.pathname.startsWith(path + '/');
         return (
           <Link
@@ -98,7 +98,12 @@ export default function MainLayout({ children }) {
   const [unreadCount, setUnreadCount]     = useState(0);
   const [notifications, setNotifications] = useState([]);
 
-  const { user }                     = useAuth();
+  const { user, hasPermission }       = useAuth();
+
+  // Filter nav items based on user permissions
+  const visibleItems = NAV_ITEMS.filter(item =>
+    !item.permission || hasPermission(item.permission)
+  );
   const { isDark, toggle: toggleTheme } = useTheme();
   const dispatch                     = useDispatch();
   const location                     = useLocation();
@@ -224,7 +229,7 @@ export default function MainLayout({ children }) {
         </div>
 
         {/* Navigation */}
-        <SidebarContent collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} />
+        <SidebarContent collapsed={collapsed} onLinkClick={() => setMobileOpen(false)} visibleItems={visibleItems} />
 
         {/* Desktop collapse toggle */}
         <button

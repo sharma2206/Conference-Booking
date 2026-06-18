@@ -2,7 +2,9 @@ import { Suspense } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
 import { selectIsAuthenticated } from '../store/authSlice';
+import { useAuth } from '../hooks/useAuth';
 import MainLayout from '../layouts/MainLayout';
+import Forbidden from '../components/Forbidden';
 
 function PageLoader() {
   return (
@@ -27,13 +29,33 @@ function PageLoader() {
   );
 }
 
-export default function ProtectedRoute() {
+/**
+ * ProtectedRoute — wraps authenticated routes.
+ *
+ * Props:
+ *   permission  – (string)  single permission required (e.g. "hall.view")
+ *   permissions – (string[]) any of these permissions required (OR logic)
+ *
+ * If neither is provided, only authentication is checked (all logged-in users pass).
+ */
+export default function ProtectedRoute({ permission, permissions }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const { hasPermission, hasAnyPermission } = useAuth();
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  // Permission check
+  let allowed = true;
+  if (permission) {
+    allowed = hasPermission(permission);
+  } else if (permissions && permissions.length > 0) {
+    allowed = hasAnyPermission(permissions);
+  }
+
   return (
     <MainLayout>
       <Suspense fallback={<PageLoader />}>
-        <Outlet />
+        {allowed ? <Outlet /> : <Forbidden />}
       </Suspense>
     </MainLayout>
   );

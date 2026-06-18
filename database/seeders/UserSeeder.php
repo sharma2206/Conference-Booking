@@ -54,7 +54,7 @@ class UserSeeder extends Seeder
                 'role' => 'facility-manager',
             ],
             [
-                'name' => 'Priya Sharma',
+                'name' => 'Sharma',
                 'employee_id' => 'EMP004',
                 'email' => 'hrhead@conference.com',
                 'phone' => '+91-9000000004',
@@ -66,7 +66,7 @@ class UserSeeder extends Seeder
                 'role' => 'department-head',
             ],
             [
-                'name' => 'Amit Singh',
+                'name' => 'Pramod Kumar',
                 'employee_id' => 'EMP005',
                 'email' => 'employee@conference.com',
                 'phone' => '+91-9000000005',

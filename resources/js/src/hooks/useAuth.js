@@ -37,6 +37,15 @@ export function useAuth() {
     return perms.some(p => (typeof p === 'string' ? p : p.name) === permission);
   };
 
+  const hasAnyPermission = (permissions) => {
+    if (!user) return false;
+    if (hasRole('super-admin')) return true;
+    return permissions.some(p => hasPermission(p));
+  };
+
+  // Alias for cleaner component usage
+  const can = hasPermission;
+
   return {
     user,
     token: auth.token,
@@ -48,5 +57,7 @@ export function useAuth() {
     hasRole,
     hasAnyRole,
     hasPermission,
+    hasAnyPermission,
+    can,
   };
 }

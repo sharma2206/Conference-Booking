@@ -78,6 +78,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasMany(Booking::class);
     }
 
+
     public function approvals(): HasMany
     {
         return $this->hasMany(BookingApproval::class, 'approver_id');

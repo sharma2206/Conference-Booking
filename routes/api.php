@@ -28,7 +28,7 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
 // Authenticated routes
 Route::middleware(['auth:api', 'throttle:api'])->group(function () {
 
-    // Auth
+    // ── Auth (all authenticated users) ──────────────────────────────
     Route::prefix('auth')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
@@ -37,7 +37,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::post('2fa/disable', [AuthController::class, 'disable2FA']);
     });
 
-    // Dashboard
+    // ── Dashboard (all authenticated users) ─────────────────────────
     Route::prefix('dashboard')->group(function () {
         Route::get('summary', [DashboardController::class, 'summary']);
         Route::get('hall-utilization', [DashboardController::class, 'hallUtilization']);
@@ -46,90 +46,140 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('upcoming-bookings', [DashboardController::class, 'upcomingBookings']);
     });
 
-    // Halls
-    Route::apiResource('halls', HallController::class);
-    Route::post('halls/{hall}/images', [HallController::class, 'uploadImage']);
-    Route::get('halls/{hall}/availability', [HallController::class, 'availability']);
-
-    // Bookings
-    Route::get('bookings/calendar', [BookingController::class, 'calendar']);
-    Route::post('bookings/recurring', [BookingController::class, 'recurringStore']);
-    Route::apiResource('bookings', BookingController::class);
-    Route::post('bookings/{booking}/approve', [BookingApprovalController::class, 'approve']);
-    Route::post('bookings/{booking}/reject', [BookingApprovalController::class, 'reject']);
-    Route::get('pending-approvals', [BookingApprovalController::class, 'pendingApprovals']);
-
-    // Departments
-    Route::get('departments/all', [DepartmentController::class, 'all']);
-    Route::apiResource('departments', DepartmentController::class);
-
-    // Users
-    Route::apiResource('users', UserController::class);
-    Route::post('users/{user}/avatar', [UserController::class, 'updateAvatar']);
-    Route::put('users/{user}/password', [UserController::class, 'updatePassword']);
-    Route::get('user-roles', [UserController::class, 'roles']);
-
-    // Roles & Permissions
-    Route::apiResource('roles', RoleController::class);
-    Route::get('permissions', [RoleController::class, 'permissions']);
-    Route::get('all-permissions', [RoleController::class, 'allPermissions']);
-
-    // Visitors
-    Route::apiResource('visitors', VisitorController::class);
-    Route::post('visitors/{visitor}/check-in', [VisitorController::class, 'checkIn']);
-    Route::post('visitors/{visitor}/check-out', [VisitorController::class, 'checkOut']);
-    Route::post('visitors/{visitor}/approve', [VisitorController::class, 'approve']);
-
-    // Catering
-    Route::get('catering/menus', [CateringController::class, 'menus']);
-    Route::post('catering/menus', [CateringController::class, 'storeMenu']);
-    Route::put('catering/menus/{menu}', [CateringController::class, 'updateMenu']);
-    Route::delete('catering/menus/{menu}', [CateringController::class, 'destroyMenu']);
-    Route::get('catering/orders', [CateringController::class, 'orders']);
-    Route::post('catering/orders', [CateringController::class, 'storeOrder']);
-    Route::put('catering/orders/{order}/status', [CateringController::class, 'updateOrderStatus']);
-    Route::get('catering/monthly-cost', [CateringController::class, 'monthlyCost']);
-
-    // Resources
-    Route::apiResource('resources', ResourceController::class);
-    Route::post('resources/request', [ResourceController::class, 'requestResource']);
-    Route::post('booking-resources/{bookingResource}/return', [ResourceController::class, 'returnResource']);
-
-    // Notifications
+    // ── Notifications (all authenticated users) ─────────────────────
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('notifications/mark-read', [NotificationController::class, 'markRead']);
     Route::delete('notifications/{id}', [NotificationController::class, 'destroy']);
     Route::delete('notifications', [NotificationController::class, 'destroyAll']);
 
-    // Reports
-    Route::prefix('reports')->group(function () {
+    // ── Halls ────────────────────────────────────────────────────────
+    Route::middleware('permission:hall.view')->group(function () {
+        Route::get('halls', [HallController::class, 'index']);
+        Route::get('halls/{hall}', [HallController::class, 'show']);
+        Route::get('halls/{hall}/availability', [HallController::class, 'availability']);
+    });
+    Route::post('halls', [HallController::class, 'store'])->middleware('permission:hall.create');
+    Route::put('halls/{hall}', [HallController::class, 'update'])->middleware('permission:hall.edit');
+    Route::delete('halls/{hall}', [HallController::class, 'destroy'])->middleware('permission:hall.delete');
+    Route::post('halls/{hall}/images', [HallController::class, 'uploadImage'])->middleware('permission:hall.edit');
+
+    // ── Bookings ─────────────────────────────────────────────────────
+    Route::middleware('permission:booking.view')->group(function () {
+        Route::get('bookings/calendar', [BookingController::class, 'calendar']);
+        Route::get('bookings', [BookingController::class, 'index']);
+        Route::get('bookings/{booking}', [BookingController::class, 'show']);
+    });
+    Route::post('bookings', [BookingController::class, 'store'])->middleware('permission:booking.create');
+    Route::post('bookings/recurring', [BookingController::class, 'recurringStore'])->middleware('permission:booking.create');
+    Route::put('bookings/{booking}', [BookingController::class, 'update'])->middleware('permission:booking.edit');
+    Route::delete('bookings/{booking}', [BookingController::class, 'destroy'])->middleware('permission:booking.cancel');
+
+    // ── Approvals ────────────────────────────────────────────────────
+    Route::middleware('permission:booking.approve')->group(function () {
+        Route::get('pending-approvals', [BookingApprovalController::class, 'pendingApprovals']);
+        Route::post('bookings/{booking}/approve', [BookingApprovalController::class, 'approve']);
+        Route::post('bookings/{booking}/reject', [BookingApprovalController::class, 'reject']);
+    });
+
+    // ── Departments ──────────────────────────────────────────────────
+    Route::middleware('permission:department.view')->group(function () {
+        Route::get('departments/all', [DepartmentController::class, 'all']);
+        Route::get('departments', [DepartmentController::class, 'index']);
+        Route::get('departments/{department}', [DepartmentController::class, 'show']);
+    });
+    Route::post('departments', [DepartmentController::class, 'store'])->middleware('permission:department.create');
+    Route::put('departments/{department}', [DepartmentController::class, 'update'])->middleware('permission:department.edit');
+    Route::delete('departments/{department}', [DepartmentController::class, 'destroy'])->middleware('permission:department.delete');
+
+    // ── Users ────────────────────────────────────────────────────────
+    Route::middleware('permission:user.view')->group(function () {
+        Route::get('users', [UserController::class, 'index']);
+        Route::get('users/{user}', [UserController::class, 'show']);
+        Route::get('user-roles', [UserController::class, 'roles']);
+    });
+    Route::post('users', [UserController::class, 'store'])->middleware('permission:user.create');
+    Route::put('users/{user}', [UserController::class, 'update'])->middleware('permission:user.edit');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->middleware('permission:user.delete');
+    Route::post('users/{user}/avatar', [UserController::class, 'updateAvatar'])->middleware('permission:user.edit');
+    Route::put('users/{user}/password', [UserController::class, 'updatePassword'])->middleware('permission:user.edit');
+
+    // ── Roles & Permissions ──────────────────────────────────────────
+    Route::middleware('permission:role.view')->group(function () {
+        Route::get('roles', [RoleController::class, 'index']);
+        Route::get('roles/{role}', [RoleController::class, 'show']);
+        Route::get('permissions', [RoleController::class, 'permissions']);
+        Route::get('all-permissions', [RoleController::class, 'allPermissions']);
+    });
+    Route::post('roles', [RoleController::class, 'store'])->middleware('permission:role.create');
+    Route::put('roles/{role}', [RoleController::class, 'update'])->middleware('permission:role.edit');
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:role.delete');
+
+    // ── Visitors ─────────────────────────────────────────────────────
+    Route::middleware('permission:visitor.view')->group(function () {
+        Route::get('visitors', [VisitorController::class, 'index']);
+        Route::get('visitors/{visitor}', [VisitorController::class, 'show']);
+    });
+    Route::post('visitors', [VisitorController::class, 'store'])->middleware('permission:visitor.create');
+    Route::put('visitors/{visitor}', [VisitorController::class, 'update'])->middleware('permission:visitor.edit');
+    Route::delete('visitors/{visitor}', [VisitorController::class, 'destroy'])->middleware('permission:visitor.edit');
+    Route::post('visitors/{visitor}/check-in', [VisitorController::class, 'checkIn'])->middleware('permission:visitor.check_in');
+    Route::post('visitors/{visitor}/check-out', [VisitorController::class, 'checkOut'])->middleware('permission:visitor.check_out');
+    Route::post('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->middleware('permission:visitor.approve');
+
+    // ── Catering ─────────────────────────────────────────────────────
+    Route::middleware('permission:catering.view')->group(function () {
+        Route::get('catering/menus', [CateringController::class, 'menus']);
+        Route::get('catering/orders', [CateringController::class, 'orders']);
+        Route::get('catering/monthly-cost', [CateringController::class, 'monthlyCost']);
+    });
+    Route::post('catering/menus', [CateringController::class, 'storeMenu'])->middleware('permission:catering.create');
+    Route::put('catering/menus/{menu}', [CateringController::class, 'updateMenu'])->middleware('permission:catering.edit');
+    Route::delete('catering/menus/{menu}', [CateringController::class, 'destroyMenu'])->middleware('permission:catering.delete');
+    Route::post('catering/orders', [CateringController::class, 'storeOrder'])->middleware('permission:catering.create');
+    Route::put('catering/orders/{order}/status', [CateringController::class, 'updateOrderStatus'])->middleware('permission:catering.edit');
+
+    // ── Resources ────────────────────────────────────────────────────
+    Route::middleware('permission:resource.view')->group(function () {
+        Route::get('resources', [ResourceController::class, 'index']);
+        Route::get('resources/{resource}', [ResourceController::class, 'show']);
+    });
+    Route::post('resources', [ResourceController::class, 'store'])->middleware('permission:resource.create');
+    Route::put('resources/{resource}', [ResourceController::class, 'update'])->middleware('permission:resource.edit');
+    Route::delete('resources/{resource}', [ResourceController::class, 'destroy'])->middleware('permission:resource.delete');
+    Route::post('resources/request', [ResourceController::class, 'requestResource'])->middleware('permission:resource.view');
+    Route::post('booking-resources/{bookingResource}/return', [ResourceController::class, 'returnResource'])->middleware('permission:resource.view');
+
+    // ── Reports ──────────────────────────────────────────────────────
+    Route::middleware('permission:report.view')->prefix('reports')->group(function () {
         Route::get('bookings', [ReportController::class, 'bookings']);
         Route::get('hall-utilization', [ReportController::class, 'hallUtilization']);
         Route::get('department-wise', [ReportController::class, 'departmentWise']);
         Route::get('top-halls', [ReportController::class, 'topHalls']);
         Route::get('monthly', [ReportController::class, 'monthly']);
-        Route::get('export/excel', [ReportController::class, 'exportExcel']);
-        Route::get('export/pdf', [ReportController::class, 'exportPdf']);
     });
+    Route::get('reports/export/excel', [ReportController::class, 'exportExcel'])->middleware('permission:report.export');
+    Route::get('reports/export/pdf', [ReportController::class, 'exportPdf'])->middleware('permission:report.export');
 
-    // Audit Logs
-    Route::prefix('audit')->group(function () {
+    // ── Audit Logs ───────────────────────────────────────────────────
+    Route::middleware('permission:audit.view')->prefix('audit')->group(function () {
         Route::get('logs', [AuditLogController::class, 'index']);
         Route::get('activity', [AuditLogController::class, 'activityLog']);
         Route::get('modules', [AuditLogController::class, 'modules']);
     });
 
-    // Settings
-    Route::prefix('settings')->group(function () {
+    // ── Settings ─────────────────────────────────────────────────────
+    Route::middleware('permission:settings.view')->prefix('settings')->group(function () {
         Route::get('/', [SettingsController::class, 'index']);
-        Route::put('/', [SettingsController::class, 'update']);
         Route::get('group/{group}', [SettingsController::class, 'getByGroup']);
         Route::get('holidays', [SettingsController::class, 'holidays']);
+        Route::get('workflows', [SettingsController::class, 'approvalWorkflows']);
+    });
+    Route::middleware('permission:settings.update')->prefix('settings')->group(function () {
+        Route::put('/', [SettingsController::class, 'update']);
         Route::post('holidays', [SettingsController::class, 'storeHoliday']);
         Route::put('holidays/{holiday}', [SettingsController::class, 'updateHoliday']);
         Route::delete('holidays/{holiday}', [SettingsController::class, 'destroyHoliday']);
-        Route::get('workflows', [SettingsController::class, 'approvalWorkflows']);
         Route::post('workflows', [SettingsController::class, 'storeWorkflow']);
         Route::delete('workflows/{workflow}', [SettingsController::class, 'destroyWorkflow']);
     });

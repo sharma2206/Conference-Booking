@@ -41,11 +41,14 @@ class AuthService
 
         AuditLog::record('login', 'auth', ['email' => $credentials['email']]);
 
+        $userData = $user->load('roles', 'department')->toArray();
+        $userData['permissions'] = $user->getAllPermissions()->pluck('name')->values();
+
         return [
             'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => config('jwt.ttl') * 60,
-            'user' => $user->load('roles', 'permissions', 'department'),
+            'user' => $userData,
         ];
     }
 
@@ -69,11 +72,14 @@ class AuthService
 
         AuditLog::record('register', 'auth', ['user_id' => $user->id]);
 
+        $userData = $user->load('roles', 'department')->toArray();
+        $userData['permissions'] = $user->getAllPermissions()->pluck('name')->values();
+
         return [
             'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => config('jwt.ttl') * 60,
-            'user' => $user->load('roles', 'permissions', 'department'),
+            'user' => $userData,
         ];
     }
 
