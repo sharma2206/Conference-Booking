@@ -67,16 +67,16 @@ export default function ResourcesPage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Resources</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage bookable resources and equipment</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Resources</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage bookable resources and equipment</p>
         </div>
         <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add Resource</Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <Table>
           <Thead>
             <tr>
@@ -99,8 +99,8 @@ export default function ResourcesPage() {
               return (
                 <Tr key={r.id}>
                   <Td>
-                    <p className="font-medium text-gray-900">{r.name}</p>
-                    {r.description && <p className="text-xs text-gray-400">{r.description}</p>}
+                    <p className="font-medium text-gray-900 dark:text-white">{r.name}</p>
+                    {r.description && <p className="text-xs text-gray-400 dark:text-slate-500">{r.description}</p>}
                   </Td>
                   <Td><Badge variant="info">{r.type}</Badge></Td>
                   <Td>{r.total_quantity}</Td>
@@ -111,10 +111,10 @@ export default function ResourcesPage() {
                   <Td><Badge variant={r.status === 'available' ? 'success' : 'default'}>{r.status}</Badge></Td>
                   <Td className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                      <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => setDeleteTarget(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <button onClick={() => setDeleteTarget(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -148,7 +148,7 @@ export default function ResourcesPage() {
             </Select>
           </div>
           <Textarea label="Description" rows={2} {...register('description')} />
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
             <Button type="button" variant="secondary" onClick={() => setFormModal(false)}>Cancel</Button>
             <Button type="submit" loading={saveMutation.isPending}>{editResource ? 'Update' : 'Create'}</Button>
           </div>

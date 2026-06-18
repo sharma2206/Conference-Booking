@@ -8,6 +8,7 @@ import { useCalendarBookings } from '../../hooks/useBookings';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { formatTime } from '../../lib/utils';
+import { Button } from '../../components/ui/Button';
 
 const statusColors = {
   pending: '#f59e0b',
@@ -43,23 +44,23 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Booking Calendar</h1>
-          <p className="text-sm text-gray-500 mt-0.5">View all bookings by date</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Booking Calendar</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">View all bookings by date</p>
         </div>
         <div className="flex items-center gap-4 text-xs">
           {Object.entries(statusColors).map(([s, c]) => (
             <div key={s} className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />
-              <span className="capitalize text-gray-600">{s}</span>
+              <span className="capitalize text-gray-600 dark:text-slate-300">{s}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-4">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
@@ -88,27 +89,27 @@ export default function CalendarPage() {
           <div className="p-5 space-y-4">
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-gray-400 uppercase font-semibold mb-0.5">Title</p>
-                <p className="text-sm font-medium text-gray-900">{eventModal.title}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-0.5">Title</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{eventModal.title}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs text-gray-400 uppercase font-semibold mb-0.5">Hall</p>
-                  <p className="text-sm text-gray-700">{eventModal.hall?.name || '—'}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-0.5">Hall</p>
+                  <p className="text-sm text-gray-700 dark:text-slate-300">{eventModal.hall?.name || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase font-semibold mb-0.5">Status</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-0.5">Status</p>
                   <Badge variant={{ pending: 'warning', approved: 'success', rejected: 'danger' }[eventModal.status] || 'default'}>
                     {eventModal.status}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase font-semibold mb-0.5">Date</p>
-                  <p className="text-sm text-gray-700">{eventModal.booking_date}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-0.5">Date</p>
+                  <p className="text-sm text-gray-700 dark:text-slate-300">{eventModal.booking_date}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase font-semibold mb-0.5">Time</p>
-                  <p className="text-sm text-gray-700">{formatTime(eventModal.start_time)} – {formatTime(eventModal.end_time)}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-0.5">Time</p>
+                  <p className="text-sm text-gray-700 dark:text-slate-300">{formatTime(eventModal.start_time)} – {formatTime(eventModal.end_time)}</p>
                 </div>
               </div>
             </div>

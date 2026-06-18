@@ -16,7 +16,7 @@ export default function ApprovalsPage() {
   const [rejectReason, setRejectReason] = useState('');
 
   const { data, isLoading, refetch } = usePendingApprovals({ page });
-  const approvals = data?.data || [];
+  const approvals = data?.data ?? [];
   const meta = data?.meta;
 
   const approveMutation = useApproveBooking({
@@ -25,18 +25,23 @@ export default function ApprovalsPage() {
   });
 
   const rejectMutation = useRejectBooking({
-    onSuccess: () => { toast.success('Booking rejected'); setRejectModal(null); setRejectReason(''); refetch(); },
+    onSuccess: () => {
+      toast.success('Booking rejected');
+      setRejectModal(null);
+      setRejectReason('');
+      refetch();
+    },
     onError: (e) => toast.error(e.response?.data?.message || 'Rejection failed'),
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Pending Approvals</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Review and action booking requests</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Review and action booking requests</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <Table>
           <Thead>
             <tr>
@@ -51,22 +56,26 @@ export default function ApprovalsPage() {
           </Thead>
           <Tbody>
             {isLoading ? (
-              <tr><td colSpan={7} className="py-12 text-center text-sm text-gray-400">Loading…</td></tr>
+              <tr>
+                <td colSpan={7} className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</td>
+              </tr>
             ) : approvals.length === 0 ? (
               <EmptyState icon={ClipboardList} title="No pending approvals" description="All bookings are reviewed" />
             ) : approvals.map(b => (
               <Tr key={b.id}>
                 <Td>
-                  <p className="font-medium text-gray-900">{b.title}</p>
-                  <p className="text-xs font-mono text-gray-400">{b.booking_number}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{b.title}</p>
+                  <p className="text-xs font-mono text-gray-400 dark:text-slate-500">{b.booking_number}</p>
                 </Td>
-                <Td>{b.hall?.name || '—'}</Td>
+                <Td className="dark:text-slate-300">{b.hall?.name || '—'}</Td>
                 <Td>
-                  <p className="text-sm">{formatDate(b.booking_date)}</p>
-                  <p className="text-xs text-gray-400">{formatTime(b.start_time)} – {formatTime(b.end_time)}</p>
+                  <p className="text-sm dark:text-slate-300">{formatDate(b.booking_date)}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">
+                    {formatTime(b.start_time)} – {formatTime(b.end_time)}
+                  </p>
                 </Td>
-                <Td>{b.user?.name || '—'}</Td>
-                <Td>{b.department?.name || '—'}</Td>
+                <Td className="dark:text-slate-300">{b.user?.name || '—'}</Td>
+                <Td className="dark:text-slate-300">{b.department?.name || '—'}</Td>
                 <Td>
                   <Badge variant="warning">Step {b.current_approval_step || 1}</Badge>
                 </Td>
@@ -74,23 +83,26 @@ export default function ApprovalsPage() {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => navigate(`/bookings/${b.id}`)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       title="View details"
+                      aria-label="View booking details"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => approveMutation.mutate({ id: b.id, data: {} })}
                       disabled={approveMutation.isPending}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors disabled:opacity-50"
                       title="Approve"
+                      aria-label="Approve booking"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => { setRejectModal(b); setRejectReason(''); }}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       title="Reject"
+                      aria-label="Reject booking"
                     >
                       <XCircle className="h-4 w-4" />
                     </button>
@@ -106,15 +118,15 @@ export default function ApprovalsPage() {
       <Modal isOpen={!!rejectModal} onClose={() => setRejectModal(null)} title="Reject Booking" size="sm">
         {rejectModal && (
           <div className="p-5 space-y-4">
-            <p className="text-sm text-gray-600">
-              Rejecting: <span className="font-medium">{rejectModal.title}</span>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Rejecting: <span className="font-semibold text-gray-900 dark:text-white">{rejectModal.title}</span>
             </p>
             <textarea
               rows={3}
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
               placeholder="Reason for rejection (required)…"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
             />
             <div className="flex justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setRejectModal(null)}>Cancel</Button>

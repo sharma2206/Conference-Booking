@@ -86,20 +86,20 @@ export default function BookingForm() {
   };
 
   if (isEdit && bookingLoading) {
-    return <div className="flex items-center justify-center h-64 text-gray-400">Loading…</div>;
+    return <div className="flex items-center justify-center h-64 text-gray-400 dark:text-slate-500">Loading…</div>;
   }
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Booking' : 'New Booking'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Submit a conference hall booking request</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{isEdit ? 'Edit Booking' : 'New Booking'}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Submit a conference hall booking request</p>
         </div>
       </div>
 
@@ -222,7 +222,7 @@ export default function BookingForm() {
             <Card>
               <CardHeader><CardTitle>Submission</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
                   Your booking will be submitted for approval. You will be notified once it is reviewed.
                 </p>
                 <Button type="submit" loading={isSaving} className="w-full justify-center">

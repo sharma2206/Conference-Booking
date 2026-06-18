@@ -44,7 +44,7 @@ function SettingsGroup({ group, label }) {
     onError: () => toast.error('Save failed'),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</div>;
 
   const entries = Object.entries(fields);
 
@@ -52,7 +52,7 @@ function SettingsGroup({ group, label }) {
     <div className="space-y-4">
       {entries.map(([key, value]) => (
         <div key={key} className="grid grid-cols-3 gap-4 items-center">
-          <label className="text-sm font-medium text-gray-700 col-span-1 capitalize">
+          <label className="text-sm font-medium text-gray-700 dark:text-slate-300 col-span-1 capitalize">
             {key.replace(/_/g, ' ')}
           </label>
           <div className="col-span-2">
@@ -64,14 +64,14 @@ function SettingsGroup({ group, label }) {
                   onChange={e => setFields(p => ({ ...p, [key]: e.target.checked }))}
                   className="rounded border-gray-300 text-blue-600"
                 />
-                <span className="text-sm text-gray-600">{key.replace(/_/g, ' ')}</span>
+                <span className="text-sm text-gray-600 dark:text-slate-300">{key.replace(/_/g, ' ')}</span>
               </label>
             ) : (
               <input
                 type={key.includes('time') ? 'time' : key.includes('password') || key.includes('secret') ? 'password' : 'text'}
                 value={value ?? ''}
                 onChange={e => setFields(p => ({ ...p, [key]: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}
           </div>
@@ -79,7 +79,7 @@ function SettingsGroup({ group, label }) {
       ))}
 
       {entries.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-4">No settings in this group.</p>
+        <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No settings in this group.</p>
       )}
 
       <div className="flex justify-end pt-2">
@@ -123,14 +123,14 @@ function HolidaysTab() {
       {isLoading ? <div className="text-center text-sm text-gray-400">Loading…</div> : (
         <div className="space-y-2">
           {holidays.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">No holidays configured.</p>
+            <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">No holidays configured.</p>
           ) : holidays.map(h => (
-            <div key={h.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
+            <div key={h.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900">{h.name}</p>
-                <p className="text-xs text-gray-400">{new Date(h.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{h.name}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">{new Date(h.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
-              <button onClick={() => setDeleteTarget(h)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <button onClick={() => setDeleteTarget(h)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -174,10 +174,10 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Configure system preferences</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Configure system preferences</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
@@ -188,7 +188,9 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+                activeTab === tab.id
+                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
               }`}
             >
               <tab.icon className="h-4 w-4" />

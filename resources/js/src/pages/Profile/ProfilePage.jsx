@@ -74,10 +74,10 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage your account settings</p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage your account settings</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5">
@@ -89,7 +89,7 @@ export default function ProfilePage() {
                 <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
                   {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
-                <label className="absolute bottom-0 right-0 h-7 w-7 bg-white rounded-full border border-gray-200 shadow-sm flex items-center justify-center cursor-pointer hover:bg-gray-50">
+                <label className="absolute bottom-0 right-0 h-7 w-7 bg-white dark:bg-slate-700 rounded-full border border-gray-200 dark:border-slate-600 shadow-sm flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-600">
                   <Camera className="h-3.5 w-3.5 text-gray-500" />
                   <input
                     type="file"
@@ -100,9 +100,9 @@ export default function ProfilePage() {
                 </label>
               </div>
               <div className="text-center">
-                <p className="font-semibold text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-400">{user?.email}</p>
-                <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                <p className="font-semibold text-gray-900 dark:text-white">{user?.name}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-400">{user?.email}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 capitalize">
                   {user?.roles?.[0]?.name || user?.roles?.[0] || ''}
                 </p>
               </div>
@@ -118,7 +118,9 @@ export default function ProfilePage() {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+                  activeTab === item.id
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <item.icon className="h-4 w-4" />

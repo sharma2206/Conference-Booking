@@ -18,8 +18,8 @@ const statusVariant = {
 function DetailItem({ label, value, className = '' }) {
   return (
     <div className={className}>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm text-gray-800 font-medium">{value || '—'}</p>
+      <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-sm text-gray-800 dark:text-slate-200 font-medium">{value || '—'}</p>
     </div>
   );
 }
@@ -53,14 +53,14 @@ export default function BookingDetails() {
   const canEdit = booking?.status === 'pending' && hasPermission('booking.edit');
   const canCancel = ['pending', 'approved'].includes(booking?.status) && hasPermission('booking.cancel');
 
-  if (isLoading) return <div className="flex items-center justify-center h-64 text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-gray-400 dark:text-slate-500">Loading…</div>;
   if (!booking) return <div className="flex items-center justify-center h-64"><p className="text-red-500">Booking not found.</p></div>;
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400">
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
@@ -119,19 +119,19 @@ export default function BookingDetails() {
             <CardHeader><CardTitle>Purpose & Agenda</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Purpose</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{booking.purpose}</p>
+                <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Purpose</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">{booking.purpose}</p>
               </div>
               {booking.agenda && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Agenda</p>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{booking.agenda}</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Agenda</p>
+                  <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{booking.agenda}</p>
                 </div>
               )}
               {booking.remarks && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Remarks</p>
-                  <p className="text-sm text-gray-700">{booking.remarks}</p>
+                  <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Remarks</p>
+                  <p className="text-sm text-gray-700 dark:text-slate-300">{booking.remarks}</p>
                 </div>
               )}
             </CardContent>
@@ -144,22 +144,22 @@ export default function BookingDetails() {
             <CardContent className="space-y-3">
               {booking.approvals?.length > 0 ? (
                 booking.approvals.map(approval => (
-                  <div key={approval.id} className="border border-gray-100 rounded-lg p-3">
+                  <div key={approval.id} className="border border-gray-100 dark:border-slate-700 rounded-lg p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-600">Step {approval.step_level}</span>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-slate-300">Step {approval.step_level}</span>
                       <Badge variant={statusVariant[approval.status] || 'default'}>{approval.status}</Badge>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{approval.role_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{approval.role_name}</p>
                     {approval.approver?.name && (
-                      <p className="text-xs text-gray-700 mt-0.5">By: {approval.approver.name}</p>
+                      <p className="text-xs text-gray-700 dark:text-slate-300 mt-0.5">By: {approval.approver.name}</p>
                     )}
                     {approval.remarks && (
-                      <p className="text-xs text-gray-500 mt-1 italic">"{approval.remarks}"</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 italic">"{approval.remarks}"</p>
                     )}
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-400">No approval records yet.</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500">No approval records yet.</p>
               )}
             </CardContent>
           </Card>
@@ -169,13 +169,13 @@ export default function BookingDetails() {
       {/* Reject Modal */}
       <Modal isOpen={rejectModal} onClose={() => setRejectModal(false)} title="Reject Booking" size="sm">
         <div className="p-5 space-y-4">
-          <p className="text-sm text-gray-600">Provide a reason for rejection:</p>
+          <p className="text-sm text-gray-600 dark:text-slate-300">Provide a reason for rejection:</p>
           <textarea
             rows={3}
             value={rejectReason}
             onChange={e => setRejectReason(e.target.value)}
             placeholder="Reason for rejection…"
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500"
           />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setRejectModal(false)}>Cancel</Button>

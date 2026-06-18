@@ -85,20 +85,20 @@ export default function HallForm() {
   const removeAmenity = (a) => setAmenities(prev => prev.filter(x => x !== a));
 
   if (isEdit && hallLoading) {
-    return <div className="flex items-center justify-center h-64 text-gray-400">Loading…</div>;
+    return <div className="flex items-center justify-center h-64 text-gray-400 dark:text-slate-500">Loading…</div>;
   }
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Hall' : 'Create New Hall'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{isEdit ? 'Update conference hall details' : 'Add a new conference hall'}</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{isEdit ? 'Edit Hall' : 'Create New Hall'}</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{isEdit ? 'Update conference hall details' : 'Add a new conference hall'}</p>
         </div>
       </div>
 
@@ -188,7 +188,7 @@ export default function HallForm() {
                     onChange={e => setAmenityInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
                     placeholder="Add amenity…"
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     type="button"
@@ -200,10 +200,10 @@ export default function HallForm() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {amenities.length === 0 && (
-                    <p className="text-sm text-gray-400">No amenities added</p>
+                    <p className="text-sm text-gray-400 dark:text-slate-500">No amenities added</p>
                   )}
                   {amenities.map(a => (
-                    <span key={a} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                    <span key={a} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
                       {a}
                       <button type="button" onClick={() => removeAmenity(a)}>
                         <X className="h-3 w-3" />

@@ -72,11 +72,11 @@ export default function VisitorsPage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Visitor Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track and manage facility visitors</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Visitor Management</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Track and manage facility visitors</p>
         </div>
         <Button onClick={() => { reset(); setFormModal(true); }}>
           <Plus className="h-4 w-4" /> Register Visitor
@@ -84,17 +84,17 @@ export default function VisitorsPage() {
       </div>
 
       <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-slate-500" />
         <input
           type="text"
           placeholder="Search visitors…"
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1); }}
-          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <Table>
           <Thead>
             <tr>
@@ -116,11 +116,11 @@ export default function VisitorsPage() {
             ) : visitors.map(v => (
               <Tr key={v.id}>
                 <Td>
-                  <p className="font-medium text-gray-900">{v.name}</p>
-                  <p className="text-xs text-gray-400">{v.phone || v.email}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{v.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">{v.phone || v.email}</p>
                 </Td>
                 <Td>{v.company || '—'}</Td>
-                <Td><p className="truncate max-w-xs text-xs text-gray-600">{v.purpose}</p></Td>
+                <Td><p className="truncate max-w-xs text-xs text-gray-600 dark:text-slate-400">{v.purpose}</p></Td>
                 <Td>{v.expected_arrival ? formatDate(v.expected_arrival) : '—'}</Td>
                 <Td>{v.check_in_at ? new Date(v.check_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</Td>
                 <Td>{v.check_out_at ? new Date(v.check_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</Td>
@@ -130,7 +130,7 @@ export default function VisitorsPage() {
                     {v.status === 'expected' && (
                       <button
                         onClick={() => approveMutation.mutate(v.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
                         title="Approve"
                       >
                         <CheckCircle className="h-4 w-4" />
@@ -139,7 +139,7 @@ export default function VisitorsPage() {
                     {!v.check_in_at && (
                       <button
                         onClick={() => checkInMutation.mutate(v.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                         title="Check In"
                       >
                         <LogIn className="h-4 w-4" />
@@ -148,7 +148,7 @@ export default function VisitorsPage() {
                     {v.check_in_at && !v.check_out_at && (
                       <button
                         onClick={() => checkOutMutation.mutate(v.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                         title="Check Out"
                       >
                         <LogOut className="h-4 w-4" />
@@ -179,7 +179,7 @@ export default function VisitorsPage() {
           </Select>
           <Input label="ID Number" {...register('id_number')} />
           <Input label="Purpose of Visit" required error={errors.purpose?.message} {...register('purpose')} className="col-span-2" />
-          <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
             <Button type="button" variant="secondary" onClick={() => setFormModal(false)}>Cancel</Button>
             <Button type="submit" loading={createMutation.isPending}>Register</Button>
           </div>

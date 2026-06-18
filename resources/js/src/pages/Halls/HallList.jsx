@@ -30,11 +30,11 @@ export default function HallList() {
   });
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Hall Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage conference halls and meeting rooms</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hall Management</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage conference halls and meeting rooms</p>
         </div>
         {hasPermission('hall.create') && (
           <Button onClick={() => navigate('/halls/new')}>
@@ -52,13 +52,13 @@ export default function HallList() {
             placeholder="Search halls…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1); }}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
         >
           <option value="">All Status</option>
           <option value="active">Active</option>
@@ -67,7 +67,7 @@ export default function HallList() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <Table>
           <Thead>
             <tr>
@@ -88,16 +88,16 @@ export default function HallList() {
               <Tr key={hall.id} onClick={() => navigate(`/halls/${hall.id}`)}>
                 <Td>
                   <div>
-                    <p className="font-medium text-gray-900">{hall.name}</p>
-                    {hall.description && <p className="text-xs text-gray-400 truncate max-w-xs">{hall.description}</p>}
+                    <p className="font-medium text-gray-900 dark:text-white">{hall.name}</p>
+                    {hall.description && <p className="text-xs text-gray-400 dark:text-slate-500 truncate max-w-xs">{hall.description}</p>}
                   </div>
                 </Td>
-                <Td><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{hall.code}</span></Td>
+                <Td><span className="font-mono text-xs bg-gray-100 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">{hall.code}</span></Td>
                 <Td>
-                  <p>{hall.building || '—'}</p>
-                  <p className="text-xs text-gray-400">{hall.location}</p>
+                  <p className="dark:text-slate-300">{hall.building || '—'}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">{hall.location}</p>
                 </Td>
-                <Td><span className="font-semibold">{hall.capacity}</span> <span className="text-gray-400 text-xs">pax</span></Td>
+                <Td><span className="font-semibold dark:text-slate-200">{hall.capacity}</span> <span className="text-gray-400 dark:text-slate-500 text-xs">pax</span></Td>
                 <Td>
                   <Badge variant={statusVariant[hall.status] || 'default'}>{hall.status}</Badge>
                 </Td>
@@ -106,7 +106,7 @@ export default function HallList() {
                     {hasPermission('hall.edit') && (
                       <button
                         onClick={() => navigate(`/halls/${hall.id}/edit`)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
@@ -114,7 +114,7 @@ export default function HallList() {
                     {hasPermission('hall.delete') && (
                       <button
                         onClick={() => setDeleteTarget(hall)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

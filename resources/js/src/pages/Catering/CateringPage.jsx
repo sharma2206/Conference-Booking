@@ -80,11 +80,11 @@ export default function CateringPage() {
   });
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Catering Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage menus and catering orders</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Catering Management</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage menus and catering orders</p>
         </div>
         {tab === 'Menus' && (
           <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add Menu Item</Button>
@@ -92,13 +92,13 @@ export default function CateringPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-slate-700">
         {TABS.map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setPage(1); }}
             className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+              tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
             }`}
           >
             {t}
@@ -107,7 +107,7 @@ export default function CateringPage() {
       </div>
 
       {tab === 'Menus' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <Table>
             <Thead>
               <tr>
@@ -127,8 +127,8 @@ export default function CateringPage() {
               ) : menus.map(m => (
                 <Tr key={m.id}>
                   <Td>
-                    <p className="font-medium text-gray-900">{m.name}</p>
-                    {m.description && <p className="text-xs text-gray-400">{m.description}</p>}
+                    <p className="font-medium text-gray-900 dark:text-white">{m.name}</p>
+                    {m.description && <p className="text-xs text-gray-400 dark:text-slate-500">{m.description}</p>}
                   </Td>
                   <Td><Badge variant="info">{m.category}</Badge></Td>
                   <Td>₹{parseFloat(m.price).toFixed(2)}</Td>
@@ -136,10 +136,10 @@ export default function CateringPage() {
                   <Td><Badge variant={m.is_available ? 'success' : 'default'}>{m.is_available ? 'Yes' : 'No'}</Badge></Td>
                   <Td className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                      <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => setDeleteTarget(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                      <button onClick={() => setDeleteTarget(m)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -153,7 +153,7 @@ export default function CateringPage() {
       )}
 
       {tab === 'Orders' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
           <Table>
             <Thead>
               <tr>
@@ -200,10 +200,10 @@ export default function CateringPage() {
           </div>
           <Input label="Description" {...register('description')} />
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="rounded border-gray-300 text-blue-600" {...register('is_available')} />
-            <span className="text-sm text-gray-700">Available for ordering</span>
+            <input type="checkbox" className="rounded border-gray-300 dark:border-slate-600 text-blue-600" {...register('is_available')} />
+            <span className="text-sm text-gray-700 dark:text-slate-300">Available for ordering</span>
           </label>
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
             <Button type="button" variant="secondary" onClick={() => setFormModal(false)}>Cancel</Button>
             <Button type="submit" loading={saveMutation.isPending}>{editItem ? 'Update' : 'Create'}</Button>
           </div>
