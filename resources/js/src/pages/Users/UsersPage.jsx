@@ -12,6 +12,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
 import { Table, Thead, Th, Tbody, Tr, Td, Pagination, EmptyState } from '../../components/ui/Table';
+import { SkeletonTable } from '../../components/ui/Skeleton';
 import { Modal, ConfirmModal } from '../../components/ui/Modal';
 
 const userSchema = z.object({
@@ -139,9 +140,7 @@ export default function UsersPage() {
           </Thead>
           <Tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</td>
-              </tr>
+              <SkeletonTable rows={8} cols={7} />
             ) : users.length === 0 ? (
               <EmptyState icon={Users} title="No users found" description="Add system users" />
             ) : users.map(u => (

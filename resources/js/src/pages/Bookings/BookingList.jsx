@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, CalendarDays, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useBookings, useCancelBooking } from '../../hooks/useBookings';
@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Table, Thead, Th, Tbody, Tr, Td, Pagination, EmptyState } from '../../components/ui/Table';
+import { SkeletonTable } from '../../components/ui/Skeleton';
 import { ConfirmModal } from '../../components/ui/Modal';
 import { formatDate, formatTime } from '../../lib/utils';
 
@@ -17,9 +18,11 @@ const statusVariant = {
 
 export default function BookingList() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { hasPermission } = useAuth();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  // UX-11a: pre-fill search from URL ?search= param (set by global search)
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
   const [status, setStatus] = useState('');
   const [cancelTarget, setCancelTarget] = useState(null);
 
@@ -87,9 +90,7 @@ export default function BookingList() {
           </Thead>
           <Tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-12 text-center text-sm text-gray-400 dark:text-slate-500">Loading…</td>
-              </tr>
+              <SkeletonTable rows={8} cols={7} />
             ) : bookings.length === 0 ? (
               <EmptyState icon={CalendarDays} title="No bookings found" description="Create your first booking" />
             ) : bookings.map(b => (

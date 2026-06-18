@@ -15,13 +15,14 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'name'          => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone'         => ['nullable', 'string', 'max:20'],
             'department_id' => ['nullable', 'exists:departments,id'],
-            'designation' => ['nullable', 'string', 'max:100'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
-            'role' => ['nullable', 'string', 'exists:roles,name'],
+            'designation'   => ['nullable', 'string', 'max:100'],
+            // SEC-06: enforce strong passwords
+            'password'      => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            // SEC-01: 'role' is intentionally NOT accepted — all self-registrations get 'employee'
         ];
     }
 }

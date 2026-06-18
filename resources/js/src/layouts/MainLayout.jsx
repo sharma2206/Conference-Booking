@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
@@ -134,18 +135,33 @@ export default function MainLayout({ children }) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
+  // FE-06: poll for unread count every 60s (not on every navigation)
   useEffect(() => {
-    api.get(API.NOTIFICATIONS_UNREAD)
-      .then(r => setUnreadCount(r.data.count ?? 0))
-      .catch(() => {});
-  }, [location.pathname]);
+    const fetchUnread = () => {
+      if (document.visibilityState !== 'visible') return;
+      api.get(API.NOTIFICATIONS_UNREAD)
+        .then(r => setUnreadCount(r.data.count ?? 0))
+        .catch((e) => console.error('Failed to fetch notification count', e));
+    };
+
+    fetchUnread(); // initial fetch on mount
+    const interval = setInterval(fetchUnread, 60_000);
+    document.addEventListener('visibilitychange', fetchUnread);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', fetchUnread);
+    };
+  }, []);
 
   const openNotif = async () => {
     if (!notifOpen) {
       try {
         const r = await api.get(API.NOTIFICATIONS, { params: { per_page: 8 } });
         setNotifications(r.data.data ?? []);
-      } catch {}
+      } catch (e) {
+        console.error('Failed to load notifications', e);
+      }
     }
     setNotifOpen(v => !v);
   };
@@ -155,7 +171,10 @@ export default function MainLayout({ children }) {
       await api.post(API.NOTIFICATIONS_MARK_READ);
       setUnreadCount(0);
       setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date().toISOString() })));
-    } catch {}
+    } catch (e) {
+      console.error('Failed to mark notifications as read', e);
+      toast.error('Could not mark notifications as read');
+    }
   };
 
   const handleLogout = async () => {
@@ -299,19 +318,25 @@ export default function MainLayout({ children }) {
           {/* Right-side actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
 
-            {/* Search */}
-            <div
-              className="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 w-40 md:w-48 lg:w-60"
+            {/* Search — navigates to /bookings?search=<query> on Enter */}
+            <form
               role="search"
+              className="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 w-40 md:w-48 lg:w-60"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = e.currentTarget.elements.search.value.trim();
+                if (q) navigate(`/bookings?search=${encodeURIComponent(q)}`);
+              }}
             >
               <Search className="h-4 w-4 text-gray-400 dark:text-slate-400 flex-shrink-0" aria-hidden="true" />
               <input
+                name="search"
                 type="search"
-                placeholder="Search…"
+                placeholder="Search bookings…"
                 className="bg-transparent text-sm text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 outline-none w-full"
-                aria-label="Search"
+                aria-label="Search bookings"
               />
-            </div>
+            </form>
 
             {/* Theme toggle */}
             <button
@@ -461,15 +486,17 @@ export default function MainLayout({ children }) {
                     <User className="h-4 w-4 text-gray-400 dark:text-slate-400" aria-hidden="true" />
                     Profile
                   </Link>
-                  <Link
-                    to="/settings"
-                    role="menuitem"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <Settings className="h-4 w-4 text-gray-400 dark:text-slate-400" aria-hidden="true" />
-                    Settings
-                  </Link>
+                  {hasPermission('settings.view') && (
+                    <Link
+                      to="/settings"
+                      role="menuitem"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <Settings className="h-4 w-4 text-gray-400 dark:text-slate-400" aria-hidden="true" />
+                      Settings
+                    </Link>
+                  )}
                   <hr className="my-1 border-gray-100 dark:border-slate-700" />
                   <button
                     role="menuitem"

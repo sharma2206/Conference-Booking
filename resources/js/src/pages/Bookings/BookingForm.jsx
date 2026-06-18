@@ -44,9 +44,15 @@ export default function BookingForm() {
   });
   const departments = deptsData || [];
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
+
+  // FE-08: live capacity warning
+  const watchedHallId = watch('hall_id');
+  const watchedParticipants = watch('participant_count');
+  const selectedHall = halls.find(h => String(h.id) === String(watchedHallId));
+  const capacityExceeded = selectedHall && watchedParticipants > selectedHall.capacity;
 
   useEffect(() => {
     if (booking) {
@@ -145,9 +151,19 @@ export default function BookingForm() {
                   >
                     <option value="">Select a hall</option>
                     {halls.map(h => (
-                      <option key={h.id} value={h.id}>{h.name} (cap: {h.capacity})</option>
+                      <option key={h.id} value={h.id}>{h.name} — capacity: {h.capacity}</option>
                     ))}
                   </Select>
+                  {selectedHall && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      Max capacity: <strong>{selectedHall.capacity}</strong> people
+                    </p>
+                  )}
+                  {capacityExceeded && (
+                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      ⚠ Participant count exceeds this hall&apos;s capacity ({selectedHall.capacity}). The booking will be rejected by the server.
+                    </p>
+                  )}
                 </div>
                 <Input
                   label="Booking Date"

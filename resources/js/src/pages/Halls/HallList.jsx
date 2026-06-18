@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Table, Thead, Th, Tbody, Tr, Td, Pagination, EmptyState } from '../../components/ui/Table';
+import { SkeletonTable } from '../../components/ui/Skeleton';
 import { ConfirmModal } from '../../components/ui/Modal';
 import { cn } from '../../lib/utils';
 
@@ -81,7 +82,7 @@ export default function HallList() {
           </Thead>
           <Tbody>
             {isLoading ? (
-              <tr><td colSpan={6} className="py-12 text-center text-sm text-gray-400">Loading…</td></tr>
+              <SkeletonTable rows={6} cols={6} />
             ) : halls.length === 0 ? (
               <EmptyState icon={Building2} title="No halls found" description="Add your first conference hall" />
             ) : halls.map(hall => (

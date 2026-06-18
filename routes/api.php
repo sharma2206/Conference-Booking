@@ -17,6 +17,9 @@ use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Visitor\VisitorController;
 use Illuminate\Support\Facades\Route;
 
+// Health check — public, no auth required
+Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
+
 // Public auth routes
 Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -37,8 +40,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::post('2fa/disable', [AuthController::class, 'disable2FA']);
     });
 
-    // ── Dashboard (all authenticated users) ─────────────────────────
-    Route::prefix('dashboard')->group(function () {
+    // ── Dashboard — requires booking.view ───────────────────────────
+    Route::prefix('dashboard')->middleware('permission:booking.view')->group(function () {
         Route::get('summary', [DashboardController::class, 'summary']);
         Route::get('hall-utilization', [DashboardController::class, 'hallUtilization']);
         Route::get('booking-trends', [DashboardController::class, 'bookingTrends']);
@@ -73,6 +76,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     Route::post('bookings', [BookingController::class, 'store'])->middleware('permission:booking.create');
     Route::post('bookings/recurring', [BookingController::class, 'recurringStore'])->middleware('permission:booking.create');
     Route::put('bookings/{booking}', [BookingController::class, 'update'])->middleware('permission:booking.edit');
+    // POST /cancel is the semantically correct REST action; DELETE is kept for backwards compatibility
+    Route::post('bookings/{booking}/cancel', [BookingController::class, 'destroy'])->middleware('permission:booking.cancel');
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy'])->middleware('permission:booking.cancel');
 
     // ── Approvals ────────────────────────────────────────────────────
@@ -122,7 +127,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     });
     Route::post('visitors', [VisitorController::class, 'store'])->middleware('permission:visitor.create');
     Route::put('visitors/{visitor}', [VisitorController::class, 'update'])->middleware('permission:visitor.edit');
-    Route::delete('visitors/{visitor}', [VisitorController::class, 'destroy'])->middleware('permission:visitor.edit');
+    Route::delete('visitors/{visitor}', [VisitorController::class, 'destroy'])->middleware('permission:visitor.delete');
     Route::post('visitors/{visitor}/check-in', [VisitorController::class, 'checkIn'])->middleware('permission:visitor.check_in');
     Route::post('visitors/{visitor}/check-out', [VisitorController::class, 'checkOut'])->middleware('permission:visitor.check_out');
     Route::post('visitors/{visitor}/approve', [VisitorController::class, 'approve'])->middleware('permission:visitor.approve');

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\StoreBookingRequest;
+use App\Http\Requests\Booking\StoreRecurringBookingRequest;
 use App\Http\Requests\Booking\UpdateBookingRequest;
+use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use App\Services\BookingService;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +18,9 @@ class BookingController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $bookings = $this->bookingService->list($request->all());
+        // API-06: whitelist filter keys rather than passing $request->all()
+        $filters  = $request->only(['status', 'hall_id', 'department_id', 'user_id', 'date_from', 'date_to', 'search', 'per_page', 'my_bookings']);
+        $bookings = $this->bookingService->list($filters);
 
         return response()->json($bookings);
     }
@@ -25,7 +29,7 @@ class BookingController extends Controller
     {
         $booking = $this->bookingService->create($request->validated());
 
-        return response()->json(['data' => $booking], 201);
+        return response()->json(['data' => new BookingResource($booking)], 201);
     }
 
     public function show(Booking $booking): JsonResponse
@@ -33,7 +37,7 @@ class BookingController extends Controller
         $this->authorize('view', $booking);
 
         return response()->json([
-            'data' => $booking->load([
+            'data' => new BookingResource($booking->load([
                 'hall.facilities',
                 'user',
                 'department',
@@ -42,7 +46,7 @@ class BookingController extends Controller
                 'visitors',
                 'cateringOrder.items.menu',
                 'resources.resource',
-            ]),
+            ])),
         ]);
     }
 
@@ -52,7 +56,7 @@ class BookingController extends Controller
 
         $updated = $this->bookingService->update($booking, $request->validated());
 
-        return response()->json(['data' => $updated]);
+        return response()->json(['data' => new BookingResource($updated)]);
     }
 
     public function destroy(Booking $booking): JsonResponse
@@ -61,75 +65,62 @@ class BookingController extends Controller
 
         $cancelled = $this->bookingService->cancel($booking, request('reason', ''));
 
-        return response()->json(['data' => $cancelled, 'message' => 'Booking cancelled successfully.']);
+        return response()->json(['data' => new BookingResource($cancelled), 'message' => 'Booking cancelled successfully.']);
     }
 
     public function calendar(Request $request): JsonResponse
     {
         $request->validate([
             'start' => ['required', 'date'],
-            'end' => ['required', 'date'],
+            'end'   => ['required', 'date'],
         ]);
+
+        $user    = auth('api')->user();
+        $isAdmin = $user->hasAnyRole(['super-admin', 'admin', 'facility-manager']);
 
         $bookings = Booking::with(['hall', 'user'])
             ->whereBetween('booking_date', [$request->start, $request->end])
             ->whereIn('status', ['pending', 'approved', 'completed'])
-            ->when(!auth('api')->user()->hasAnyRole(['super-admin', 'admin', 'facility-manager']), function ($q) {
-                $q->where('user_id', auth('api')->id());
-            })
+            ->when(!$isAdmin, fn($q) => $q->where('user_id', $user->id))
             ->get()
             ->map(fn($b) => [
-                'id' => $b->id,
+                'id'    => $b->id,
                 'title' => "{$b->hall->name}: {$b->title}",
                 'start' => "{$b->booking_date->toDateString()}T{$b->start_time}",
-                'end' => "{$b->booking_date->toDateString()}T{$b->end_time}",
+                'end'   => "{$b->booking_date->toDateString()}T{$b->end_time}",
                 'color' => $this->getStatusColor($b->status),
                 'extendedProps' => [
-                    'booking_id' => $b->id,
+                    'booking_id'     => $b->id,
                     'booking_number' => $b->booking_number,
-                    'hall' => $b->hall->name,
-                    'status' => $b->status,
-                    'organizer' => $b->user->name,
+                    'hall'           => $b->hall->name,
+                    'status'         => $b->status,
+                    'organizer'      => $b->user->name,
                 ],
             ]);
 
         return response()->json(['data' => $bookings]);
     }
 
-    public function recurringStore(Request $request): JsonResponse
+    public function recurringStore(StoreRecurringBookingRequest $request): JsonResponse
     {
-        $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'purpose' => ['required', 'string'],
-            'hall_id' => ['required', 'exists:halls,id'],
-            'department_id' => ['nullable', 'exists:departments,id'],
-            'participant_count' => ['required', 'integer', 'min:1'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-            'frequency' => ['required', 'in:daily,weekly,monthly,custom'],
-            'days_of_week' => ['nullable', 'array'],
-            'days_of_week.*' => ['integer', 'between:0,6'],
-            'start_date' => ['required', 'date', 'after_or_equal:today'],
-            'end_date' => ['required', 'date', 'after:start_date'],
-        ]);
-
         $result = $this->bookingService->createRecurring($request->validated());
 
         return response()->json([
-            'data' => $result,
-            'message' => count($result['bookings']) . ' recurring bookings created.',
+            'data'    => $result,
+            'message' => count($result['bookings']) . ' recurring bookings created.'
+                . (count($result['skipped_dates']) > 0 ? ' ' . count($result['skipped_dates']) . ' dates were skipped due to conflicts.' : ''),
         ], 201);
     }
 
     private function getStatusColor(string $status): string
     {
         return match ($status) {
-            'approved' => '#22c55e',
-            'pending' => '#f59e0b',
-            'rejected' => '#ef4444',
+            'approved'  => '#22c55e',
+            'pending'   => '#f59e0b',
+            'rejected'  => '#ef4444',
             'cancelled' => '#6b7280',
             'completed' => '#3b82f6',
-            default => '#8b5cf6',
+            default     => '#8b5cf6',
         };
     }
 }

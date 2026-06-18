@@ -8,6 +8,7 @@ use App\Models\Holiday;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SettingsController extends Controller
 {
@@ -42,6 +43,8 @@ class SettingsController extends Controller
                 $setting['group'] ?? 'general',
                 $setting['type'] ?? 'string'
             );
+            // PERF-08: bust per-key cache so next read reflects new value
+            Cache::forget("setting_{$setting['key']}");
         }
 
         AuditLog::record('update', 'settings', ['keys' => array_column($data['settings'], 'key')]);

@@ -120,6 +120,13 @@ class ApprovalService
             ]);
         }
 
+        // SEC-03: prevent self-approval
+        if ($approver->id === $booking->user_id) {
+            throw ValidationException::withMessages([
+                'approver' => ['You cannot approve or reject your own booking.'],
+            ]);
+        }
+
         $currentApproval = $booking->approvals()
             ->where('step_level', $booking->current_approval_step)
             ->where('status', 'pending')

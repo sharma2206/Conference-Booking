@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Hall;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Hall\StoreHallRequest;
 use App\Http\Requests\Hall\UpdateHallRequest;
+use App\Http\Resources\HallResource;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Hall;
@@ -16,15 +17,17 @@ class HallController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $halls = Hall::with('facilities')
-            ->when($request->search, fn($q, $v) => $q->where('name', 'like', "%{$v}%")->orWhere('code', 'like', "%{$v}%"))
-            ->when($request->status, fn($q, $v) => $q->where('status', $v))
-            ->when($request->capacity_min, fn($q, $v) => $q->where('capacity', '>=', $v))
-            ->when($request->building, fn($q, $v) => $q->where('building', $v))
-            ->orderBy('name')
-            ->paginate($request->per_page ?? 15);
+        $perPage = min(100, max(1, (int) ($request->per_page ?? 15)));
 
-        return response()->json($halls);
+        $halls = Hall::with('facilities')
+            ->when($request->search,       fn($q, $v) => $q->where('name', 'like', "%{$v}%")->orWhere('code', 'like', "%{$v}%"))
+            ->when($request->status,       fn($q, $v) => $q->where('status', $v))
+            ->when($request->capacity_min, fn($q, $v) => $q->where('capacity', '>=', $v))
+            ->when($request->building,     fn($q, $v) => $q->where('building', $v))
+            ->orderBy('name')
+            ->paginate($perPage);
+
+        return response()->json(HallResource::collection($halls)->response()->getData(true));
     }
 
     public function store(StoreHallRequest $request): JsonResponse
@@ -41,13 +44,13 @@ class HallController extends Controller
 
         AuditLog::record('create', 'hall', ['hall_id' => $hall->id, 'name' => $hall->name]);
 
-        return response()->json(['data' => $hall->load('facilities')], 201);
+        return response()->json(['data' => new HallResource($hall->load('facilities'))], 201);
     }
 
     public function show(Hall $hall): JsonResponse
     {
         return response()->json([
-            'data' => $hall->load('facilities', 'createdBy'),
+            'data' => new HallResource($hall->load('facilities', 'createdBy')),
         ]);
     }
 
@@ -65,7 +68,7 @@ class HallController extends Controller
 
         AuditLog::record('update', 'hall', ['hall_id' => $hall->id]);
 
-        return response()->json(['data' => $hall->fresh('facilities')]);
+        return response()->json(['data' => new HallResource($hall->fresh('facilities'))]);
     }
 
     public function destroy(Hall $hall): JsonResponse
@@ -91,7 +94,7 @@ class HallController extends Controller
             'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        $path = $request->file('image')->store('halls', 'public');
+        $path   = $request->file('image')->store('halls', 'public');
         $images = $hall->images ?? [];
         $images[] = $path;
         $hall->update(['images' => $images]);
@@ -102,9 +105,9 @@ class HallController extends Controller
     public function availability(Request $request, Hall $hall): JsonResponse
     {
         $request->validate([
-            'date' => ['required', 'date'],
+            'date'       => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'end_time'   => ['required', 'date_format:H:i', 'after:start_time'],
         ]);
 
         $available = $hall->isAvailable(
@@ -121,7 +124,8 @@ class HallController extends Controller
 
         return response()->json([
             'available' => $available,
-            'bookings' => $bookings,
+            'hall'      => new HallResource($hall),
+            'bookings'  => $bookings,
         ]);
     }
 }

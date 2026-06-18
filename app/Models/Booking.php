@@ -24,7 +24,6 @@ class Booking extends Model
         'organizer_phone',
         'hall_id',
         'user_id',
-        'department',
         'department_id',
         'participant_count',
         'booking_date',

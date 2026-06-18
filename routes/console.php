@@ -11,6 +11,11 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new SendBookingReminders)->hourly();
-Schedule::job(new MarkCompletedBookings)->hourly();
-Schedule::job(new EscalateOverdueApprovals)->dailyAt('08:00');
+// Runs every 15 minutes to catch 1-day and 1-hour pre-booking reminders
+Schedule::job(new SendBookingReminders)->everyFifteenMinutes()->withoutOverlapping();
+
+// Marks past approved bookings as completed — runs once daily at midnight
+Schedule::job(new MarkCompletedBookings)->daily()->withoutOverlapping();
+
+// Escalates approvals pending for > 24 hours — runs every hour
+Schedule::job(new EscalateOverdueApprovals)->hourly()->withoutOverlapping();

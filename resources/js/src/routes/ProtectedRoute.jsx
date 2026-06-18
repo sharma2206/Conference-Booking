@@ -5,6 +5,7 @@ import { selectIsAuthenticated } from '../store/authSlice';
 import { useAuth } from '../hooks/useAuth';
 import MainLayout from '../layouts/MainLayout';
 import Forbidden from '../components/Forbidden';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 function PageLoader() {
   return (
@@ -35,8 +36,6 @@ function PageLoader() {
  * Props:
  *   permission  – (string)  single permission required (e.g. "hall.view")
  *   permissions – (string[]) any of these permissions required (OR logic)
- *
- * If neither is provided, only authentication is checked (all logged-in users pass).
  */
 export default function ProtectedRoute({ permission, permissions }) {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -44,7 +43,6 @@ export default function ProtectedRoute({ permission, permissions }) {
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  // Permission check
   let allowed = true;
   if (permission) {
     allowed = hasPermission(permission);
@@ -54,9 +52,12 @@ export default function ProtectedRoute({ permission, permissions }) {
 
   return (
     <MainLayout>
-      <Suspense fallback={<PageLoader />}>
-        {allowed ? <Outlet /> : <Forbidden />}
-      </Suspense>
+      {/* FE-13: ErrorBoundary wraps Suspense to catch render errors in lazy pages */}
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          {allowed ? <Outlet /> : <Forbidden />}
+        </Suspense>
+      </ErrorBoundary>
     </MainLayout>
   );
 }

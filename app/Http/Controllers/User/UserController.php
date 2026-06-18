@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -17,15 +18,17 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $users = User::with(['roles', 'department'])
-            ->when($request->search, fn($q, $v) => $q->where('name', 'like', "%{$v}%")->orWhere('email', 'like', "%{$v}%"))
-            ->when($request->role, fn($q, $v) => $q->role($v))
-            ->when($request->department_id, fn($q, $v) => $q->where('department_id', $v))
-            ->when($request->status, fn($q, $v) => $q->where('status', $v))
-            ->orderBy('name')
-            ->paginate($request->per_page ?? 15);
+        $perPage = min(100, max(1, (int) ($request->per_page ?? 15)));
 
-        return response()->json($users);
+        $users = User::with(['roles', 'department'])
+            ->when($request->search,       fn($q, $v) => $q->where('name', 'like', "%{$v}%")->orWhere('email', 'like', "%{$v}%"))
+            ->when($request->role,         fn($q, $v) => $q->role($v))
+            ->when($request->department_id,fn($q, $v) => $q->where('department_id', $v))
+            ->when($request->status,       fn($q, $v) => $q->where('status', $v))
+            ->orderBy('name')
+            ->paginate($perPage);
+
+        return response()->json(UserResource::collection($users)->response()->getData(true));
     }
 
     public function store(StoreUserRequest $request): JsonResponse
@@ -33,14 +36,14 @@ class UserController extends Controller
         $data = $request->validated();
 
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'employee_id' => $data['employee_id'] ?? null,
+            'name'          => $data['name'],
+            'email'         => $data['email'],
+            'phone'         => $data['phone'] ?? null,
+            'employee_id'   => $data['employee_id'] ?? null,
             'department_id' => $data['department_id'] ?? null,
-            'designation' => $data['designation'] ?? null,
-            'password' => Hash::make($data['password']),
-            'status' => $data['status'] ?? 'active',
+            'designation'   => $data['designation'] ?? null,
+            'password'      => Hash::make($data['password']),
+            'status'        => $data['status'] ?? 'active',
         ]);
 
         if (!empty($data['role'])) {
@@ -49,13 +52,13 @@ class UserController extends Controller
 
         AuditLog::record('create', 'user', ['user_id' => $user->id]);
 
-        return response()->json(['data' => $user->load('roles', 'department')], 201);
+        return response()->json(['data' => new UserResource($user->load('roles', 'department'))], 201);
     }
 
     public function show(User $user): JsonResponse
     {
         return response()->json([
-            'data' => $user->load('roles', 'permissions', 'department'),
+            'data' => new UserResource($user->load('roles', 'department')),
         ]);
     }
 
@@ -77,7 +80,7 @@ class UserController extends Controller
 
         AuditLog::record('update', 'user', ['user_id' => $user->id]);
 
-        return response()->json(['data' => $user->fresh(['roles', 'department'])]);
+        return response()->json(['data' => new UserResource($user->fresh(['roles', 'department']))]);
     }
 
     public function destroy(User $user): JsonResponse
