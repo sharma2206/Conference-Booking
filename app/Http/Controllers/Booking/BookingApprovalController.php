@@ -4,64 +4,60 @@ namespace App\Http\Controllers\Booking;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingApproval;
+use App\Services\ApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class BookingApprovalController extends Controller
 {
-    public function approve(Booking $booking): JsonResponse
-    {
-        if ($booking->status !== 'pending') {
-            return response()->json(['message' => 'Only pending bookings can be approved.'], 422);
-        }
+    public function __construct(private readonly ApprovalService $approvalService) {}
 
-        $booking->update([
-            'status'            => 'approved',
-            'approver_id'       => Auth::id(),
-            'rejection_reason'  => null,
+    public function approve(Request $request, Booking $booking): JsonResponse
+    {
+        $request->validate([
+            'remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        BookingApproval::updateOrCreate(
-            ['booking_id' => $booking->id],
-            [
-                'approver_id'   => Auth::id(),
-                'status'        => 'approved',
-                'remarks'       => 'Approved by ' . Auth::user()?->name,
-                'approved_at'   => now(),
-            ],
+        $updated = $this->approvalService->approve(
+            $booking,
+            auth('api')->user(),
+            $request->remarks ?? ''
         );
 
-        return response()->json($booking->load(['hall', 'user', 'approval.approver']));
+        return response()->json(['data' => $updated, 'message' => 'Booking approved successfully.']);
     }
 
     public function reject(Request $request, Booking $booking): JsonResponse
     {
-        if ($booking->status !== 'pending') {
-            return response()->json(['message' => 'Only pending bookings can be rejected.'], 422);
-        }
-
         $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        $booking->update([
-            'status'            => 'rejected',
-            'approver_id'       => Auth::id(),
-            'rejection_reason'  => $request->input('reason'),
-        ]);
-
-        BookingApproval::updateOrCreate(
-            ['booking_id' => $booking->id],
-            [
-                'approver_id'   => Auth::id(),
-                'status'        => 'rejected',
-                'remarks'       => $request->input('reason'),
-                'approved_at'   => now(),
-            ],
+        $updated = $this->approvalService->reject(
+            $booking,
+            auth('api')->user(),
+            $request->reason
         );
 
-        return response()->json($booking->load(['hall', 'user', 'approval.approver']));
+        return response()->json(['data' => $updated, 'message' => 'Booking rejected.']);
+    }
+
+    public function pendingApprovals(Request $request): JsonResponse
+    {
+        $user = auth('api')->user();
+
+        $bookings = Booking::with(['hall', 'user', 'department', 'approvals'])
+            ->where('status', 'pending')
+            ->whereHas('approvals', function ($q) use ($user) {
+                $q->where('status', 'pending')
+                  ->where(function ($inner) use ($user) {
+                      $inner->whereNull('approver_id')
+                            ->orWhere('approver_id', $user->id);
+                  });
+            })
+            ->orderByDesc('created_at')
+            ->paginate($request->per_page ?? 15);
+
+        return response()->json($bookings);
     }
 }

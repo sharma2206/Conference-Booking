@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ===== DESIGN SYSTEM — Light Premium Theme ===== */
 :root {
   --font: 'Inter', system-ui, -apple-system, sans-serif;

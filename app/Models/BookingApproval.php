@@ -12,15 +12,24 @@ class BookingApproval extends Model
 
     protected $fillable = [
         'booking_id',
+        'step_level',
+        'role_name',
         'approver_id',
         'status',
         'remarks',
         'approved_at',
+        'notified_at',
+        'escalated_at',
     ];
 
-    protected $casts = [
-        'approved_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'approved_at' => 'datetime',
+            'notified_at' => 'datetime',
+            'escalated_at' => 'datetime',
+        ];
+    }
 
     public function booking(): BelongsTo
     {

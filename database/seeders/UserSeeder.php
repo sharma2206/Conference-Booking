@@ -2,45 +2,92 @@
 
 namespace Database\Seeders;
 
+use App\Models\Department;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the users table with default users and assign roles.
-     */
     public function run(): void
     {
-        $superAdmin = User::factory()->create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@example.com',
-            'password' => 'password',
-        ]);
-        $superAdmin->assignRole('Super Admin');
+        $itDept = Department::where('code', 'IT')->first();
+        $hrDept = Department::where('code', 'HR')->first();
+        $adminDept = Department::where('code', 'ADMIN')->first();
+        $opsDept = Department::where('code', 'OPS')->first();
 
-        $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => 'password',
-        ]);
-        $admin->assignRole('Admin');
+        $users = [
+            [
+                'name' => 'Super Admin',
+                'employee_id' => 'EMP001',
+                'email' => 'superadmin@conference.com',
+                'phone' => '+91-9000000001',
+                'department_id' => $adminDept?->id,
+                'designation' => 'System Administrator',
+                'password' => Hash::make('Admin@123'),
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'role' => 'super-admin',
+            ],
+            [
+                'name' => 'Admin User',
+                'employee_id' => 'EMP002',
+                'email' => 'admin@conference.com',
+                'phone' => '+91-9000000002',
+                'department_id' => $adminDept?->id,
+                'designation' => 'Administrator',
+                'password' => Hash::make('Admin@123'),
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'role' => 'admin',
+            ],
+            [
+                'name' => 'Ravi Kumar',
+                'employee_id' => 'EMP003',
+                'email' => 'facility@conference.com',
+                'phone' => '+91-9000000003',
+                'department_id' => $adminDept?->id,
+                'designation' => 'Facility Manager',
+                'password' => Hash::make('Admin@123'),
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'role' => 'facility-manager',
+            ],
+            [
+                'name' => 'Priya Sharma',
+                'employee_id' => 'EMP004',
+                'email' => 'hrhead@conference.com',
+                'phone' => '+91-9000000004',
+                'department_id' => $hrDept?->id,
+                'designation' => 'Head of HR',
+                'password' => Hash::make('Admin@123'),
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'role' => 'department-head',
+            ],
+            [
+                'name' => 'Amit Singh',
+                'employee_id' => 'EMP005',
+                'email' => 'employee@conference.com',
+                'phone' => '+91-9000000005',
+                'department_id' => $itDept?->id,
+                'designation' => 'Software Engineer',
+                'password' => Hash::make('Admin@123'),
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'role' => 'employee',
+            ],
+        ];
 
-        $approver = User::factory()->create([
-            'name' => 'Approver User',
-            'email' => 'approver@example.com',
-            'password' => 'password',
-        ]);
-        $approver->assignRole('Approver');
+        foreach ($users as $userData) {
+            $role = $userData['role'];
+            unset($userData['role']);
 
-        $employee = User::factory()->create([
-            'name' => 'Employee User',
-            'email' => 'employee@example.com',
-            'password' => 'password',
-        ]);
-        $employee->assignRole('Employee');
+            $user = User::firstOrCreate(['email' => $userData['email']], $userData);
+
+            if (!$user->hasRole($role)) {
+                $user->assignRole($role);
+            }
+        }
     }
 }

@@ -2,28 +2,28 @@
 
 namespace App\Http\Requests\User;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return auth('api')->user()->can('user.create');
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'name' => ['required', 'string', 'max:100'],
+            'email' => ['required', 'email', 'max:100', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'employee_id' => ['nullable', 'string', 'max:30', 'unique:users,employee_id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'designation' => ['nullable', 'string', 'max:100'],
+            'password' => ['required', Password::min(8)->letters()->numbers()],
+            'role' => ['required', 'exists:roles,name'],
+            'status' => ['nullable', 'in:active,inactive,suspended'],
         ];
     }
 }

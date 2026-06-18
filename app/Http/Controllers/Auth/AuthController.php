@@ -3,73 +3,75 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Models\User;
-use Illuminate\Http\Request;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly AuthService $authService) {}
+
     public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->validated();
+        $result = $this->authService->login($request->validated());
 
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        /** @var User $user */
-        $user = Auth::user();
-        assert($user instanceof User);
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'roles' => $user->getRoleNames(),
-            ],
-        ]);
+        return response()->json($result);
     }
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        $result = $this->authService->register($request->validated());
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'roles' => $user->getRoleNames(),
-            ],
-        ], 201);
+        return response()->json($result, 201);
     }
 
-    public function me(Request $request): JsonResponse
+    public function me(): JsonResponse
     {
-        return response()->json($request->user());
+        $user = auth('api')->user()->load('roles', 'permissions', 'department');
+
+        return response()->json(['data' => $user]);
     }
 
-    public function logout(Request $request): JsonResponse
+    public function logout(): JsonResponse
     {
-        $request->user()->currentAccessToken()?->delete();
+        $this->authService->logout();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => 'Logged out successfully.']);
+    }
+
+    public function refresh(): JsonResponse
+    {
+        return response()->json($this->authService->refresh());
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->authService->sendPasswordResetLink($request->validated('email'));
+
+        return response()->json(['message' => 'Password reset link sent to your email.']);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $this->authService->resetPassword($request->validated());
+
+        return response()->json(['message' => 'Password has been reset successfully.']);
+    }
+
+    public function enable2FA(): JsonResponse
+    {
+        $result = $this->authService->enable2FA(auth('api')->user());
+
+        return response()->json($result);
+    }
+
+    public function disable2FA(): JsonResponse
+    {
+        $this->authService->disable2FA(auth('api')->user());
+
+        return response()->json(['message' => '2FA disabled.']);
     }
 }

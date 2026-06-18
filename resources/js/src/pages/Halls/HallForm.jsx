@@ -1,149 +1,230 @@
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
-import hallService from "../../services/hallService";
-import { notifyError, notifySuccess } from "../../utils/notifications";
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Plus, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useHall, useCreateHall, useUpdateHall } from '../../hooks/useHalls';
+import { Input, Select, Textarea } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+
+const schema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  code: z.string().min(2, 'Code is required'),
+  capacity: z.coerce.number().int().min(1, 'Capacity must be at least 1'),
+  location: z.string().min(2, 'Location is required'),
+  building: z.string().optional(),
+  floor: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'maintenance']),
+  hourly_rate: z.coerce.number().min(0).optional(),
+});
 
 export default function HallForm() {
-    const { id } = useParams();
-    const isEdit = Boolean(id);
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors, isSubmitting },
-    } = useForm({ defaultValues: { status: "active" } });
-    const navigate = useNavigate();
-    const [errorMessage, setErrorMessage] = useState("");
-    const [loading, setLoading] = useState(isEdit);
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+  const navigate = useNavigate();
+  const [amenities, setAmenities] = useState([]);
+  const [amenityInput, setAmenityInput] = useState('');
 
-    useEffect(() => {
-        if (!isEdit) return;
-        const loadHall = async () => {
-            try {
-                const data = await hallService.get(id);
-                reset({
-                    name: data.name,
-                    code: data.code,
-                    capacity: data.capacity,
-                    location: data.location,
-                    floor: data.floor || "",
-                    description: data.description || "",
-                    status: data.status || "active",
-                });
-            } catch (error) {
-                const msg = error?.response?.data?.message || "Unable to load hall.";
-                setErrorMessage(msg);
-                notifyError(msg);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadHall();
-    }, [id, isEdit, reset]);
+  const { data: hall, isLoading: hallLoading } = useHall(id, { enabled: isEdit });
 
-    const onSubmit = async (data) => {
-        try {
-            setErrorMessage("");
-            if (isEdit) {
-                await hallService.update(id, data);
-                notifySuccess("Hall updated successfully.");
-            } else {
-                await hallService.create(data);
-                notifySuccess("Hall created successfully.");
-            }
-            navigate("/halls", { replace: true });
-        } catch (error) {
-            const msg = error?.response?.data?.message || "Unable to save hall.";
-            setErrorMessage(msg);
-            notifyError(msg);
-        }
-    };
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { status: 'active', hourly_rate: 0 },
+  });
 
-    if (loading) {
-        return <div className="loading-center"><div className="spinner" /></div>;
+  useEffect(() => {
+    if (hall) {
+      reset({
+        name: hall.name,
+        code: hall.code,
+        capacity: hall.capacity,
+        location: hall.location,
+        building: hall.building || '',
+        floor: hall.floor || '',
+        description: hall.description || '',
+        status: hall.status || 'active',
+        hourly_rate: hall.hourly_rate || 0,
+      });
+      if (hall.amenities) {
+        setAmenities(Array.isArray(hall.amenities) ? hall.amenities : []);
+      }
     }
+  }, [hall, reset]);
 
-    return (
-        <div className="fade-in">
-            <div className="page-header">
-                <h1 className="page-title">{isEdit ? "Edit Hall" : "Create New Hall"}</h1>
-            </div>
+  const createMutation = useCreateHall({
+    onSuccess: () => { toast.success('Hall created'); navigate('/halls'); },
+    onError: (e) => toast.error(e.response?.data?.message || 'Create failed'),
+  });
 
-            <div className="card">
-                <div className="card-body">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="form-grid">
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-name">Hall Name *</label>
-                                <input id="hall-name" className={`form-input ${errors.name ? "error" : ""}`}
-                                    placeholder="e.g. Executive Conference Room"
-                                    {...register("name", { required: "Name is required" })} />
-                                {errors.name && <p className="form-error">{errors.name.message}</p>}
-                            </div>
+  const updateMutation = useUpdateHall({
+    onSuccess: () => { toast.success('Hall updated'); navigate(`/halls/${id}`); },
+    onError: (e) => toast.error(e.response?.data?.message || 'Update failed'),
+  });
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-code">Hall Code *</label>
-                                <input id="hall-code" className={`form-input ${errors.code ? "error" : ""}`}
-                                    placeholder="e.g. HALL-001"
-                                    {...register("code", { required: "Code is required" })} />
-                                {errors.code && <p className="form-error">{errors.code.message}</p>}
-                            </div>
+  const onSubmit = (data) => {
+    const payload = { ...data, amenities };
+    if (isEdit) {
+      updateMutation.mutate({ id, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-capacity">Capacity *</label>
-                                <input id="hall-capacity" type="number" className={`form-input ${errors.capacity ? "error" : ""}`}
-                                    placeholder="e.g. 40"
-                                    {...register("capacity", { required: "Capacity is required", min: { value: 1, message: "Must be at least 1" } })} />
-                                {errors.capacity && <p className="form-error">{errors.capacity.message}</p>}
-                            </div>
+  const addAmenity = () => {
+    const v = amenityInput.trim();
+    if (v && !amenities.includes(v)) {
+      setAmenities(prev => [...prev, v]);
+      setAmenityInput('');
+    }
+  };
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-location">Location *</label>
-                                <input id="hall-location" className={`form-input ${errors.location ? "error" : ""}`}
-                                    placeholder="e.g. Tower A"
-                                    {...register("location", { required: "Location is required" })} />
-                                {errors.location && <p className="form-error">{errors.location.message}</p>}
-                            </div>
+  const removeAmenity = (a) => setAmenities(prev => prev.filter(x => x !== a));
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-floor">Floor</label>
-                                <input id="hall-floor" className="form-input"
-                                    placeholder="e.g. 5th Floor"
-                                    {...register("floor")} />
-                            </div>
+  if (isEdit && hallLoading) {
+    return <div className="flex items-center justify-center h-64 text-gray-400">Loading…</div>;
+  }
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="hall-status">Status *</label>
-                                <select id="hall-status" className="form-select" {...register("status", { required: "Status is required" })}>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
-                        <div className="form-group" style={{ marginTop: 16 }}>
-                            <label className="form-label" htmlFor="hall-desc">Description</label>
-                            <textarea id="hall-desc" className="form-textarea"
-                                placeholder="Brief description of the hall..."
-                                {...register("description")} />
-                        </div>
-
-                        {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
-
-                        <div className="btn-group" style={{ marginTop: 24 }}>
-                            <button type="button" className="btn btn-outline" onClick={() => navigate(-1)}>Cancel</button>
-                            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                                {isSubmitting ? (
-                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span className="spinner spinner-sm" /> Saving...
-                                    </span>
-                                ) : isEdit ? "Update Hall" : "Create Hall"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  return (
+    <div className="p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Hall' : 'Create New Hall'}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{isEdit ? 'Update conference hall details' : 'Add a new conference hall'}</p>
         </div>
-    );
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="xl:col-span-2 space-y-5">
+            <Card>
+              <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Hall Name"
+                  required
+                  placeholder="e.g. Executive Board Room"
+                  error={errors.name?.message}
+                  {...register('name')}
+                />
+                <Input
+                  label="Hall Code"
+                  required
+                  placeholder="e.g. HALL-001"
+                  error={errors.code?.message}
+                  {...register('code')}
+                />
+                <Input
+                  label="Capacity (persons)"
+                  required
+                  type="number"
+                  min={1}
+                  placeholder="40"
+                  error={errors.capacity?.message}
+                  {...register('capacity')}
+                />
+                <Input
+                  label="Hourly Rate (₹)"
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  error={errors.hourly_rate?.message}
+                  {...register('hourly_rate')}
+                />
+                <Input
+                  label="Location"
+                  required
+                  placeholder="Tower A, Ground Floor"
+                  error={errors.location?.message}
+                  {...register('location')}
+                />
+                <Input
+                  label="Building"
+                  placeholder="Main Building"
+                  {...register('building')}
+                />
+                <Input
+                  label="Floor"
+                  placeholder="5th Floor"
+                  {...register('floor')}
+                />
+                <Select
+                  label="Status"
+                  required
+                  error={errors.status?.message}
+                  {...register('status')}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="maintenance">Under Maintenance</option>
+                </Select>
+                <div className="col-span-2">
+                  <Textarea
+                    label="Description"
+                    placeholder="Brief description of the hall, its purpose, and features…"
+                    rows={3}
+                    {...register('description')}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-5">
+            <Card>
+              <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    value={amenityInput}
+                    onChange={e => setAmenityInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
+                    placeholder="Add amenity…"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addAmenity}
+                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {amenities.length === 0 && (
+                    <p className="text-sm text-gray-400">No amenities added</p>
+                  )}
+                  {amenities.map(a => (
+                    <span key={a} className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      {a}
+                      <button type="button" onClick={() => removeAmenity(a)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-col gap-2">
+              <Button type="submit" loading={isSaving} className="w-full justify-center">
+                {isEdit ? 'Update Hall' : 'Create Hall'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="w-full justify-center">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
 }

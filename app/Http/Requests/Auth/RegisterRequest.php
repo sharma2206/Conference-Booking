@@ -17,7 +17,11 @@ class RegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'designation' => ['nullable', 'string', 'max:100'],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'role' => ['nullable', 'string', 'exists:roles,name'],
         ];
     }
 }

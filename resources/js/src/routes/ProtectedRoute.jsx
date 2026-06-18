@@ -1,12 +1,18 @@
-import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { useSelector } from 'react-redux';
+import { Navigate, Outlet } from 'react-router-dom';
+import { selectIsAuthenticated } from '../store/authSlice';
+import MainLayout from '../layouts/MainLayout';
 
-export default function ProtectedRoute({ children }) {
-    const { user } = useAuth();
+export default function ProtectedRoute() {
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-    return children;
+  return (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
+  );
 }

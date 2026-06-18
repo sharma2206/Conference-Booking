@@ -6,91 +6,130 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\StoreBookingRequest;
 use App\Http\Requests\Booking\UpdateBookingRequest;
 use App\Models\Booking;
-use App\Models\Hall;
+use App\Services\BookingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
-    public function index(): JsonResponse
+    public function __construct(private readonly BookingService $bookingService) {}
+
+    public function index(Request $request): JsonResponse
     {
-        $bookings = Booking::with(['hall', 'user'])
-            ->orderByDesc('booking_date')
-            ->paginate(15);
+        $bookings = $this->bookingService->list($request->all());
 
         return response()->json($bookings);
     }
 
     public function store(StoreBookingRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $hall = Hall::findOrFail($data['hall_id']);
+        $booking = $this->bookingService->create($request->validated());
 
-        if ($data['participant_count'] > $hall->capacity) {
-            return response()->json(['message' => 'Participant count exceeds hall capacity.'], 422);
-        }
-
-        $hasConflict = Booking::where('hall_id', $hall->id)
-            ->where('booking_date', $data['booking_date'])
-            ->where(function ($query) use ($data) {
-                $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
-                    ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
-                    ->orWhere(function ($query) use ($data) {
-                        $query->where('start_time', '<=', $data['start_time'])
-                            ->where('end_time', '>=', $data['end_time']);
-                    });
-            })
-            ->whereNotIn('status', ['cancelled', 'rejected'])
-            ->exists();
-
-        if ($hasConflict) {
-            return response()->json(['message' => 'Selected hall is not available for the requested time range.'], 422);
-        }
-
-        $duration = (int) now()->parse($data['end_time'])->diffInMinutes(now()->parse($data['start_time']));
-
-        $booking = Booking::create([
-            'title' => $data['title'],
-            'purpose' => $data['purpose'],
-            'hall_id' => $data['hall_id'],
-            'user_id' => Auth::id(),
-            'department' => $data['department'],
-            'participant_count' => $data['participant_count'],
-            'booking_date' => $data['booking_date'],
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'duration_minutes' => $duration,
-            'status' => 'pending',
-            'remarks' => $data['remarks'] ?? null,
-            'created_by' => Auth::id(),
-        ]);
-
-        return response()->json($booking->load(['hall', 'user']), 201);
+        return response()->json(['data' => $booking], 201);
     }
 
     public function show(Booking $booking): JsonResponse
     {
-        return response()->json($booking->load(['hall', 'user', 'approval.approver']));
+        $this->authorize('view', $booking);
+
+        return response()->json([
+            'data' => $booking->load([
+                'hall.facilities',
+                'user',
+                'department',
+                'approvals.approver',
+                'attendees',
+                'visitors',
+                'cateringOrder.items.menu',
+                'resources.resource',
+            ]),
+        ]);
     }
 
     public function update(UpdateBookingRequest $request, Booking $booking): JsonResponse
     {
-        $data = $request->validated();
-        $hall = Hall::findOrFail($data['hall_id']);
+        $this->authorize('update', $booking);
 
-        if ($data['participant_count'] > $hall->capacity) {
-            return response()->json(['message' => 'Participant count exceeds hall capacity.'], 422);
-        }
+        $updated = $this->bookingService->update($booking, $request->validated());
 
-        $booking->update($data + ['duration_minutes' => now()->parse($data['end_time'])->diffInMinutes(now()->parse($data['start_time']))]);
-
-        return response()->json($booking->load(['hall', 'user', 'approval']));
+        return response()->json(['data' => $updated]);
     }
 
     public function destroy(Booking $booking): JsonResponse
     {
-        $booking->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+        $this->authorize('delete', $booking);
 
-        return response()->json(['message' => 'Booking cancelled successfully.']);
+        $cancelled = $this->bookingService->cancel($booking, request('reason', ''));
+
+        return response()->json(['data' => $cancelled, 'message' => 'Booking cancelled successfully.']);
+    }
+
+    public function calendar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start' => ['required', 'date'],
+            'end' => ['required', 'date'],
+        ]);
+
+        $bookings = Booking::with(['hall', 'user'])
+            ->whereBetween('booking_date', [$request->start, $request->end])
+            ->whereIn('status', ['pending', 'approved', 'completed'])
+            ->when(!auth('api')->user()->hasAnyRole(['super-admin', 'admin', 'facility-manager']), function ($q) {
+                $q->where('user_id', auth('api')->id());
+            })
+            ->get()
+            ->map(fn($b) => [
+                'id' => $b->id,
+                'title' => "{$b->hall->name}: {$b->title}",
+                'start' => "{$b->booking_date->toDateString()}T{$b->start_time}",
+                'end' => "{$b->booking_date->toDateString()}T{$b->end_time}",
+                'color' => $this->getStatusColor($b->status),
+                'extendedProps' => [
+                    'booking_id' => $b->id,
+                    'booking_number' => $b->booking_number,
+                    'hall' => $b->hall->name,
+                    'status' => $b->status,
+                    'organizer' => $b->user->name,
+                ],
+            ]);
+
+        return response()->json(['data' => $bookings]);
+    }
+
+    public function recurringStore(Request $request): JsonResponse
+    {
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'purpose' => ['required', 'string'],
+            'hall_id' => ['required', 'exists:halls,id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'participant_count' => ['required', 'integer', 'min:1'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'frequency' => ['required', 'in:daily,weekly,monthly,custom'],
+            'days_of_week' => ['nullable', 'array'],
+            'days_of_week.*' => ['integer', 'between:0,6'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
+            'end_date' => ['required', 'date', 'after:start_date'],
+        ]);
+
+        $result = $this->bookingService->createRecurring($request->validated());
+
+        return response()->json([
+            'data' => $result,
+            'message' => count($result['bookings']) . ' recurring bookings created.',
+        ], 201);
+    }
+
+    private function getStatusColor(string $status): string
+    {
+        return match ($status) {
+            'approved' => '#22c55e',
+            'pending' => '#f59e0b',
+            'rejected' => '#ef4444',
+            'cancelled' => '#6b7280',
+            'completed' => '#3b82f6',
+            default => '#8b5cf6',
+        };
     }
 }
