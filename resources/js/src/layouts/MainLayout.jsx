@@ -7,6 +7,8 @@ import {
   ClipboardList, UserCheck, Coffee, Package, BarChart3, Settings,
   LogOut, Bell, ChevronDown, ChevronLeft, ChevronRight, Menu, X,
   User, FileText, Calendar, Sun, Moon, Search,
+  Palette, Layers, LogIn, Navigation, Puzzle, LayoutGrid,
+  FileEdit, Mail, PieChart, FolderOpen,
 } from 'lucide-react';
 import { logoutUser } from '../store/authSlice';
 import { useAuth } from '../hooks/useAuth';
@@ -30,13 +32,40 @@ const NAV_ITEMS = [
   { path: '/reports',     label: 'Reports',      icon: BarChart3,      permission: 'report.view' },
   { path: '/audit-logs',  label: 'Audit Logs',   icon: FileText,       permission: 'audit.view' },
   { path: '/settings',    label: 'Settings',     icon: Settings,       permission: 'settings.view' },
+  // White-label sub-pages (listed after /settings so breadcrumb exact-match wins)
+  { type: 'separator', label: 'White Label',     permission: 'settings.view' },
+  { path: '/settings/branding',            label: 'Brand Settings',    icon: Palette,     permission: 'settings.view' },
+  { path: '/settings/themes',              label: 'Themes',            icon: Layers,      permission: 'settings.view' },
+  { path: '/settings/login-customization', label: 'Login Page',        icon: LogIn,       permission: 'settings.view' },
+  { path: '/settings/navigation',          label: 'Navigation',        icon: Navigation,  permission: 'settings.view' },
+  { path: '/settings/modules',             label: 'Modules',           icon: Puzzle,      permission: 'settings.view' },
+  { path: '/settings/dashboard-builder',   label: 'Dashboard Builder', icon: LayoutGrid,  permission: 'settings.view' },
+  { path: '/settings/page-builder',        label: 'Page Builder',      icon: FileEdit,    permission: 'settings.view' },
+  { path: '/settings/email-branding',      label: 'Email Templates',   icon: Mail,        permission: 'settings.view' },
+  { path: '/settings/report-builder',      label: 'Report Builder',    icon: PieChart,    permission: 'settings.view' },
+  { path: '/settings/file-manager',        label: 'File Manager',      icon: FolderOpen,  permission: 'settings.view' },
 ];
 
 function SidebarContent({ collapsed, onLinkClick, visibleItems }) {
   const location = useLocation();
   return (
     <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5" aria-label="Main navigation">
-      {visibleItems.map(({ path, label, icon: Icon }) => {
+      {visibleItems.map((item) => {
+        if (item.type === 'separator') {
+          return (
+            <div key={`sep-${item.label}`} className={cn(
+              'pt-4 pb-1 px-2.5',
+              'md:hidden',
+              !collapsed && 'lg:block',
+            )}>
+              <hr className="border-slate-700/60 mb-2" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                {item.label}
+              </p>
+            </div>
+          );
+        }
+        const { path, label, icon: Icon } = item;
         const active = location.pathname === path || location.pathname.startsWith(path + '/');
         return (
           <Link
@@ -73,8 +102,11 @@ function SidebarContent({ collapsed, onLinkClick, visibleItems }) {
 
 function useBreadcrumbs() {
   const location = useLocation();
-  const activeItem = NAV_ITEMS.find(n =>
-    location.pathname === n.path || location.pathname.startsWith(n.path + '/')
+  // Exact-match first so /settings/branding wins over /settings
+  const activeItem = NAV_ITEMS.filter(n => !n.type).find(n =>
+    location.pathname === n.path
+  ) ?? NAV_ITEMS.filter(n => !n.type).find(n =>
+    location.pathname.startsWith(n.path + '/')
   );
   if (!activeItem) return [];
   const crumbs = [{ label: activeItem.label, path: activeItem.path }];
@@ -101,7 +133,7 @@ export default function MainLayout({ children }) {
 
   const { user, hasPermission }       = useAuth();
 
-  // Filter nav items based on user permissions
+  // Filter nav items — separators shown when user has the required permission
   const visibleItems = NAV_ITEMS.filter(item =>
     !item.permission || hasPermission(item.permission)
   );

@@ -97,4 +97,54 @@ export const API = {
   SETTINGS_HOLIDAY: (id) => `/settings/holidays/${id}`,
   SETTINGS_WORKFLOWS: '/settings/workflows',
   SETTINGS_WORKFLOW: (id) => `/settings/workflows/${id}`,
+
+  // Branding
+  BRANDING: '/branding',
+  BRANDING_PUBLIC: '/branding/public',
+  BRANDING_UPLOAD: '/branding/upload',
+  BRANDING_CSS: '/branding/css-variables',
+  BRANDING_PREVIEW: '/branding/preview',
+  BRANDING_PUBLISH: '/branding/publish',
+
+  // Themes
+  THEMES: '/themes',
+  THEME: (id) => `/themes/${id}`,
+  THEME_ACTIVATE: (id) => `/themes/${id}/activate`,
+
+  // Menus
+  MENUS: '/menus',
+  MENU_ITEM: (id) => `/menus/${id}`,
+  MENU_REORDER: '/menus/reorder',
+
+  // Dynamic Modules
+  MODULES: '/modules',
+  MODULE: (id) => `/modules/${id}`,
+  MODULE_TOGGLE: (id) => `/modules/${id}/toggle`,
+
+  // Pages (Dynamic)
+  DYN_PAGES: '/pages',
+  DYN_PAGE: (id) => `/pages/${id}`,
+  DYN_PAGE_PUBLISH: (id) => `/pages/${id}/publish`,
+  DYN_PAGE_UNPUBLISH: (id) => `/pages/${id}/unpublish`,
+
+  // Dashboard Layouts
+  DASHBOARD_LAYOUTS: '/dashboard/layouts',
+  DASHBOARD_LAYOUT_ROLE: '/dashboard/layouts/role',
+  DASHBOARD_WIDGETS: '/dashboard/widgets',
+
+  // Email Templates
+  EMAIL_TEMPLATES: '/email-templates',
+  EMAIL_TEMPLATE: (id) => `/email-templates/${id}`,
+  EMAIL_TEMPLATE_PREVIEW: (id) => `/email-templates/${id}/preview`,
+
+  // Report Templates
+  REPORT_TEMPLATES: '/report-templates',
+  REPORT_TEMPLATE: (id) => `/report-templates/${id}`,
+  REPORT_TEMPLATE_RUN: (id) => `/report-templates/${id}/run`,
+  REPORT_TEMPLATE_EXPORT: (id) => `/report-templates/${id}/export`,
+
+  // File Manager
+  FILE_MANAGER: '/file-manager',
+  FILE_MANAGER_UPLOAD: '/file-manager/upload',
+  FILE_MANAGER_DELETE: (filename) => `/file-manager/${encodeURIComponent(filename)}`,
 };

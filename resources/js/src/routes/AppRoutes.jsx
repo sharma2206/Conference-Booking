@@ -29,6 +29,18 @@ const SettingsPage    = lazy(() => import('../pages/Settings/SettingsPage'));
 const ProfilePage     = lazy(() => import('../pages/Profile/ProfilePage'));
 const NotificationsPage = lazy(() => import('../pages/Notifications/NotificationsPage'));
 
+// White-label & branding pages — lazy loaded
+const BrandingPage       = lazy(() => import('../pages/Branding/BrandingPage'));
+const ThemesPage         = lazy(() => import('../pages/Branding/ThemesPage'));
+const LoginCustomPage    = lazy(() => import('../pages/Branding/LoginCustomPage'));
+const NavigationBuilder  = lazy(() => import('../pages/Navigation/NavigationBuilder'));
+const ModulesPage        = lazy(() => import('../pages/Modules/ModulesPage'));
+const DashboardBuilder   = lazy(() => import('../pages/DashboardBuilder/DashboardBuilder'));
+const PageBuilderPage    = lazy(() => import('../pages/PageBuilder/PageBuilderPage'));
+const EmailBrandingPage  = lazy(() => import('../pages/EmailBranding/EmailBrandingPage'));
+const ReportBuilderPage  = lazy(() => import('../pages/ReportBuilder/ReportBuilderPage'));
+const FileManagerPage    = lazy(() => import('../pages/FileManager/FileManagerPage'));
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -110,6 +122,20 @@ export default function AppRoutes() {
       {/* ── Settings — requires settings.view ──────────────── */}
       <Route element={<ProtectedRoute permission="settings.view" />}>
         <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+
+      {/* ── White-label & Branding — requires settings.view ─ */}
+      <Route element={<ProtectedRoute permission="settings.view" />}>
+        <Route path="/settings/branding"            element={<BrandingPage />} />
+        <Route path="/settings/themes"              element={<ThemesPage />} />
+        <Route path="/settings/login-customization" element={<LoginCustomPage />} />
+        <Route path="/settings/navigation"          element={<NavigationBuilder />} />
+        <Route path="/settings/modules"             element={<ModulesPage />} />
+        <Route path="/settings/dashboard-builder"   element={<DashboardBuilder />} />
+        <Route path="/settings/page-builder"        element={<PageBuilderPage />} />
+        <Route path="/settings/email-branding"      element={<EmailBrandingPage />} />
+        <Route path="/settings/report-builder"      element={<ReportBuilderPage />} />
+        <Route path="/settings/file-manager"        element={<FileManagerPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

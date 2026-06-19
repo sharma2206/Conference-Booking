@@ -4,6 +4,15 @@ use App\Http\Controllers\AuditLog\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\BookingApprovalController;
 use App\Http\Controllers\Booking\BookingController;
+use App\Http\Controllers\Branding\BrandingController;
+use App\Http\Controllers\Branding\DashboardLayoutController;
+use App\Http\Controllers\Branding\DynamicModuleController;
+use App\Http\Controllers\Branding\EmailTemplateController;
+use App\Http\Controllers\Branding\FileManagerController;
+use App\Http\Controllers\Branding\MenuController;
+use App\Http\Controllers\Branding\PageController;
+use App\Http\Controllers\Branding\ReportTemplateController;
+use App\Http\Controllers\Branding\ThemeController;
 use App\Http\Controllers\Catering\CateringController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Department\DepartmentController;
@@ -19,6 +28,9 @@ use Illuminate\Support\Facades\Route;
 
 // Health check — public, no auth required
 Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
+
+// Public branding config — no auth required (used by frontend before login)
+Route::get('branding/public', [BrandingController::class, 'publicConfig']);
 
 // Public auth routes
 Route::prefix('auth')->middleware('throttle:auth')->group(function () {
@@ -187,5 +199,69 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::delete('holidays/{holiday}', [SettingsController::class, 'destroyHoliday']);
         Route::post('workflows', [SettingsController::class, 'storeWorkflow']);
         Route::delete('workflows/{workflow}', [SettingsController::class, 'destroyWorkflow']);
+    });
+
+    // ── Branding (read) ───────────────────────────────────────────────
+    Route::middleware('permission:settings.view')->group(function () {
+        Route::get('branding', [BrandingController::class, 'index']);
+        Route::get('branding/css-variables', [BrandingController::class, 'cssVariables']);
+        Route::get('themes', [ThemeController::class, 'index']);
+        Route::get('themes/{theme}', [ThemeController::class, 'show']);
+        Route::get('menus', [MenuController::class, 'index']);
+        Route::get('modules', [DynamicModuleController::class, 'index']);
+        Route::get('modules/{module}', [DynamicModuleController::class, 'show']);
+        Route::get('pages', [PageController::class, 'index']);
+        Route::get('pages/{page}', [PageController::class, 'show']);
+        Route::get('dashboard/layouts', [DashboardLayoutController::class, 'index']);
+        Route::get('dashboard/widgets', [DashboardLayoutController::class, 'getWidgets']);
+        Route::get('email-templates', [EmailTemplateController::class, 'index']);
+        Route::get('email-templates/{template}', [EmailTemplateController::class, 'show']);
+        Route::get('report-templates', [ReportTemplateController::class, 'index']);
+        Route::get('report-templates/{template}', [ReportTemplateController::class, 'show']);
+        Route::get('report-templates/{template}/export', [ReportTemplateController::class, 'export']);
+        Route::get('file-manager', [FileManagerController::class, 'index']);
+    });
+
+    // ── Branding (write) ──────────────────────────────────────────────
+    Route::middleware('permission:settings.update')->group(function () {
+        Route::post('branding', [BrandingController::class, 'update']);
+        Route::post('branding/upload', [BrandingController::class, 'uploadAsset']);
+        Route::post('branding/preview', [BrandingController::class, 'preview']);
+        Route::post('branding/publish', [BrandingController::class, 'publish']);
+
+        Route::post('themes', [ThemeController::class, 'store']);
+        Route::put('themes/{theme}', [ThemeController::class, 'update']);
+        Route::delete('themes/{theme}', [ThemeController::class, 'destroy']);
+        Route::post('themes/{theme}/activate', [ThemeController::class, 'activate']);
+
+        Route::post('menus', [MenuController::class, 'store']);
+        Route::put('menus/{item}', [MenuController::class, 'update']);
+        Route::delete('menus/{item}', [MenuController::class, 'destroy']);
+        Route::post('menus/reorder', [MenuController::class, 'reorder']);
+
+        Route::post('modules', [DynamicModuleController::class, 'store']);
+        Route::put('modules/{module}', [DynamicModuleController::class, 'update']);
+        Route::delete('modules/{module}', [DynamicModuleController::class, 'destroy']);
+        Route::post('modules/{module}/toggle', [DynamicModuleController::class, 'toggle']);
+
+        Route::post('pages', [PageController::class, 'store']);
+        Route::put('pages/{page}', [PageController::class, 'update']);
+        Route::delete('pages/{page}', [PageController::class, 'destroy']);
+        Route::post('pages/{page}/publish', [PageController::class, 'publish']);
+        Route::post('pages/{page}/unpublish', [PageController::class, 'unpublish']);
+
+        Route::post('dashboard/layouts', [DashboardLayoutController::class, 'store']);
+        Route::post('dashboard/layouts/role', [DashboardLayoutController::class, 'storeRole']);
+
+        Route::put('email-templates/{template}', [EmailTemplateController::class, 'update']);
+        Route::post('email-templates/{template}/preview', [EmailTemplateController::class, 'preview']);
+
+        Route::post('report-templates', [ReportTemplateController::class, 'store']);
+        Route::put('report-templates/{template}', [ReportTemplateController::class, 'update']);
+        Route::delete('report-templates/{template}', [ReportTemplateController::class, 'destroy']);
+        Route::post('report-templates/{template}/run', [ReportTemplateController::class, 'run']);
+
+        Route::post('file-manager/upload', [FileManagerController::class, 'upload']);
+        Route::delete('file-manager/{filename}', [FileManagerController::class, 'destroy']);
     });
 });

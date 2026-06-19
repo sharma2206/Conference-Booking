@@ -86,7 +86,9 @@ export default function RolesPage() {
     saveMutation.mutate({ name: roleName, permissions: selectedPerms });
   };
 
-  const SYSTEM_ROLES = ['super-admin', 'admin', 'facility-manager', 'department-head', 'employee'];
+  // super-admin: never edit or delete. Other built-in roles: editable but not deletable.
+  const UNDELETABLE_ROLES = ['super-admin', 'admin', 'facility-manager', 'department-head', 'employee'];
+  const UNEDITABLE_ROLES  = ['super-admin'];
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -120,8 +122,8 @@ export default function RolesPage() {
                   </p>
                 </div>
               </div>
-              {!SYSTEM_ROLES.includes(role.name) && (
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1">
+                {!UNEDITABLE_ROLES.includes(role.name) && (
                   <button
                     onClick={() => openEdit(role)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
@@ -129,6 +131,8 @@ export default function RolesPage() {
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
+                )}
+                {!UNDELETABLE_ROLES.includes(role.name) && (
                   <button
                     onClick={() => setDeleteTarget(role)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -136,8 +140,8 @@ export default function RolesPage() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap gap-1">
               {role.permissions?.slice(0, 5).map(p => (
@@ -172,6 +176,8 @@ export default function RolesPage() {
             value={roleName}
             onChange={e => setRoleName(e.target.value)}
             placeholder="e.g. conference-manager"
+            disabled={editRole && UNDELETABLE_ROLES.includes(editRole.name)}
+            hint={editRole && UNDELETABLE_ROLES.includes(editRole.name) ? 'Built-in role name cannot be changed' : undefined}
           />
 
           <div>

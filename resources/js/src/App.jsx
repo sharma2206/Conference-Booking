@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { BrandingProvider } from './contexts/BrandingContext';
 import AppRoutes from './routes/AppRoutes';
 import { fetchCurrentUser, selectIsAuthenticated } from './store/authSlice';
 
@@ -23,6 +24,7 @@ function AppBootstrap({ children }) {
 export default function App() {
   return (
     <ThemeProvider>
+      <BrandingProvider>
       <BrowserRouter>
         <AppBootstrap>
           <AppRoutes />
@@ -45,6 +47,7 @@ export default function App() {
           />
         </AppBootstrap>
       </BrowserRouter>
+      </BrandingProvider>
     </ThemeProvider>
   );
 }
