@@ -52,7 +52,7 @@ class ThemeService
      *
      * @param array<string, mixed> $data
      */
-    public function update(int $id, array $data): Theme
+    public function update(int|string $id, array $data): Theme
     {
         $theme = Theme::findOrFail($id);
 
@@ -70,7 +70,7 @@ class ThemeService
     /**
      * Set the given theme as default (active), clearing all other defaults.
      */
-    public function activate(int $id): Theme
+    public function activate(int|string $id): Theme
     {
         return Theme::setDefault($id);
     }
@@ -78,7 +78,7 @@ class ThemeService
     /**
      * Delete a theme. System themes cannot be deleted.
      */
-    public function delete(int $id): void
+    public function delete(int|string $id): void
     {
         $theme = Theme::findOrFail($id);
 

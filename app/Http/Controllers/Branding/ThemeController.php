@@ -28,9 +28,9 @@ class ThemeController extends Controller
     /**
      * Show a single theme.
      */
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
-        $theme = \App\Models\Theme::findOrFail($id);
+        $theme = \App\Models\Theme::findOrFail((int) $id);
 
         return response()->json([
             'data'    => $theme,
@@ -67,7 +67,7 @@ class ThemeController extends Controller
     /**
      * Update an existing theme.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([
             'name'        => ['sometimes', 'string', 'max:100'],
@@ -77,7 +77,7 @@ class ThemeController extends Controller
             'is_active'   => ['boolean'],
         ]);
 
-        $theme = $this->themeService->update($id, $data);
+        $theme = $this->themeService->update((int) $id, $data);
 
         AuditLog::record('update_theme', 'branding', ['theme_id' => $id]);
 
@@ -90,9 +90,9 @@ class ThemeController extends Controller
     /**
      * Delete a theme.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
-        $this->themeService->delete($id);
+        $this->themeService->delete((int) $id);
 
         AuditLog::record('delete_theme', 'branding', ['theme_id' => $id]);
 
@@ -104,9 +104,9 @@ class ThemeController extends Controller
     /**
      * Activate / set a theme as default.
      */
-    public function activate(int $id): JsonResponse
+    public function activate(string $id): JsonResponse
     {
-        $theme = $this->themeService->activate($id);
+        $theme = $this->themeService->activate((int) $id);
 
         AuditLog::record('activate_theme', 'branding', ['theme_id' => $id, 'name' => $theme->name]);
 

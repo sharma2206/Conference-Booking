@@ -72,10 +72,13 @@ export function BrandingProvider({ children }) {
   const fetchBranding = useCallback(async () => {
     try {
       const r = await api.get('/branding/public');
-      const config = { ...DEFAULTS, ...(r.data.data || r.data) };
+      // publicConfig() returns { data: { branding: {...}, css_variables, generated_at }, theme }
+      const payload = r.data.data || r.data;
+      const raw     = payload.branding || payload; // flatten nested branding key
+      const config  = { ...DEFAULTS, ...raw };
       setBranding(config);
       injectCssVars(config);
-      if (r.data.theme) setActiveTheme(r.data.theme);
+      if (payload.theme || r.data.theme) setActiveTheme(payload.theme || r.data.theme);
     } catch {
       injectCssVars(DEFAULTS);
     } finally {

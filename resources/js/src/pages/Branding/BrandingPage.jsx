@@ -109,7 +109,7 @@ function AssetUploadField({ fieldKey, label, hint, currentUrl, onUpload }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('field', fieldKey);
+      fd.append('key', fieldKey);
       const r = await api.post('/branding/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       onUpload(fieldKey, r.data.url || r.data.data?.url);
       toast.success(`${label} uploaded`);
@@ -163,7 +163,20 @@ export default function BrandingPage() {
 
   const { data: brandingData, isLoading, isError } = useQuery({
     queryKey: ['branding'],
-    queryFn: () => api.get('/branding').then(r => r.data.data || r.data),
+    queryFn: () => api.get('/branding').then(r => {
+      // Response: { data: { general: { company_name: {value,type,...} }, colors: {...} } }
+      // Flatten to: { company_name: 'Conference Booking', primary_color: '#3b82f6', ... }
+      const grouped = r.data.data || r.data;
+      const flat = {};
+      Object.values(grouped).forEach(group => {
+        if (group && typeof group === 'object') {
+          Object.entries(group).forEach(([key, setting]) => {
+            flat[key] = typeof setting === 'object' && setting !== null ? setting.value : setting;
+          });
+        }
+      });
+      return flat;
+    }),
   });
 
   const [form, setForm] = useState({});
@@ -172,13 +185,17 @@ export default function BrandingPage() {
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => api.post('/branding', payload).then(r => r.data),
+    // Controller expects: { settings: [{key, value}, ...] }
+    mutationFn: (flat) => {
+      const settings = Object.entries(flat).map(([key, value]) => ({ key, value }));
+      return api.post('/branding', { settings }).then(r => r.data);
+    },
     onSuccess: () => {
       toast.success('Branding settings saved');
       qc.invalidateQueries({ queryKey: ['branding'] });
       refresh();
     },
-    onError: () => toast.error('Failed to save branding settings'),
+    onError: (e) => toast.error(e.response?.data?.message || 'Failed to save branding settings'),
   });
 
   function saveTab() {

@@ -68,7 +68,7 @@ class Theme extends Model
     /**
      * Set the given theme as default, clearing all others.
      */
-    public static function setDefault(int $id): static
+    public static function setDefault(int|string $id): static
     {
         static::where('is_default', true)->update(['is_default' => false]);
 

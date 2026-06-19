@@ -23,6 +23,7 @@ export function useCalendarBookings(params = {}) {
   return useQuery({
     queryKey: ['bookings-calendar', params],
     queryFn: () => api.get(API.BOOKING_CALENDAR, { params }).then(r => r.data.data || r.data),
+    enabled: !!(params.start && params.end),
     staleTime: 60000,
   });
 }

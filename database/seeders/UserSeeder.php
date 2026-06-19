@@ -11,10 +11,10 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $itDept = Department::where('code', 'IT')->first();
-        $hrDept = Department::where('code', 'HR')->first();
-        $adminDept = Department::where('code', 'ADMIN')->first();
-        $opsDept = Department::where('code', 'OPS')->first();
+        $itDept     = Department::where('code', 'IT')->first();
+        $hrDept     = Department::where('code', 'HR')->first();
+        $adminDept  = Department::where('code', 'ADMIN')->first();
+        $opsDept    = Department::where('code', 'OPS')->first();
 
         $users = [
             [
@@ -42,7 +42,7 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
             ],
             [
-                'name' => 'Ravi Kumar',
+                'name' => 'Facility Manager',
                 'employee_id' => 'EMP003',
                 'email' => 'facility@conference.com',
                 'phone' => '+91-9000000003',
@@ -54,19 +54,19 @@ class UserSeeder extends Seeder
                 'role' => 'facility-manager',
             ],
             [
-                'name' => 'Sharma',
+                'name' => 'HR Manager',
                 'employee_id' => 'EMP004',
                 'email' => 'hrhead@conference.com',
                 'phone' => '+91-9000000004',
                 'department_id' => $hrDept?->id,
-                'designation' => 'Head of HR',
+                'designation' => 'HR Manager',
                 'password' => Hash::make('Admin@123'),
                 'status' => 'active',
                 'email_verified_at' => now(),
                 'role' => 'department-head',
             ],
             [
-                'name' => 'Pramod Kumar',
+                'name' => 'Software Engineer',
                 'employee_id' => 'EMP005',
                 'email' => 'employee@conference.com',
                 'phone' => '+91-9000000005',

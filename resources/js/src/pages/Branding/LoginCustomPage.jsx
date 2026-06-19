@@ -43,7 +43,7 @@ function SliderImageList({ images, onAdd, onRemove, onMove }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('field', 'slider_image');
+      fd.append('key', 'slider_image');
       const r = await api.post('/branding/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       onAdd(r.data.url || r.data.data?.url);
       toast.success('Image added to slider');
@@ -134,7 +134,18 @@ export default function LoginCustomPage() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['branding-login'],
-    queryFn: () => api.get('/branding').then(r => r.data.data || r.data),
+    queryFn: () => api.get('/branding').then(r => {
+      const grouped = r.data.data || r.data;
+      const flat = {};
+      Object.values(grouped).forEach(group => {
+        if (group && typeof group === 'object') {
+          Object.entries(group).forEach(([key, setting]) => {
+            flat[key] = typeof setting === 'object' && setting !== null ? setting.value : setting;
+          });
+        }
+      });
+      return flat;
+    }),
   });
 
   const [form, setForm] = useState({
@@ -187,7 +198,10 @@ export default function LoginCustomPage() {
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => api.post('/branding', payload).then(r => r.data),
+    mutationFn: (payload) => {
+      const settings = Object.entries(payload).map(([key, value]) => ({ key, value }));
+      return api.post('/branding', { settings }).then(r => r.data);
+    },
     onSuccess: () => {
       toast.success('Login customization saved');
       qc.invalidateQueries({ queryKey: ['branding-login'] });
@@ -204,7 +218,7 @@ export default function LoginCustomPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('field', 'login_background');
+      fd.append('key', 'login_background');
       const r = await api.post('/branding/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       set('bg_image_url', r.data.url || r.data.data?.url);
       toast.success('Background uploaded');

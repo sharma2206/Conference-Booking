@@ -155,4 +155,54 @@ class SettingsController extends Controller
 
         return response()->json(['message' => 'Workflow deleted.']);
     }
+
+    public function smtpSettings(): JsonResponse
+    {
+        $keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption', 'mail_from_name', 'mail_from_address'];
+        $settings = Setting::whereIn('key', $keys)->get()->pluck('value', 'key');
+
+        return response()->json(['data' => $settings]);
+    }
+
+    public function updateSmtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'smtp_host' => ['nullable', 'string', 'max:255'],
+            'smtp_port' => ['nullable', 'integer'],
+            'smtp_username' => ['nullable', 'string', 'max:255'],
+            'smtp_password' => ['nullable', 'string', 'max:255'],
+            'smtp_encryption' => ['nullable', 'in:tls,ssl,none'],
+            'mail_from_name' => ['nullable', 'string', 'max:100'],
+            'mail_from_address' => ['nullable', 'email', 'max:255'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            Setting::set($key, $value, 'smtp', 'string');
+            Cache::forget("setting_{$key}");
+        }
+
+        AuditLog::record('update', 'settings', ['keys' => array_keys($data), 'group' => 'smtp']);
+
+        return response()->json(['message' => 'SMTP settings saved.']);
+    }
+
+    public function testSmtp(): JsonResponse
+    {
+        $host = Setting::get('smtp_host');
+
+        if (!$host) {
+            return response()->json(['message' => 'SMTP not configured.'], 422);
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::raw('This is a test email from Conference Booking.', function ($message) {
+                $message->to(auth('api')->user()->email)
+                        ->subject('SMTP Test Email');
+            });
+
+            return response()->json(['message' => 'Test email sent successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'SMTP test failed: ' . $e->getMessage()], 422);
+        }
+    }
 }

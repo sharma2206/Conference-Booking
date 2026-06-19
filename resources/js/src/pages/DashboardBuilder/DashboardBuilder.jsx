@@ -1,6 +1,6 @@
 // FILE: resources/js/src/pages/DashboardBuilder/DashboardBuilder.jsx
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   BarChart3, Calendar, TrendingUp, Clock, Users, UtensilsCrossed,
   Package, Hash, CalendarDays, Bell, Save, Trash2, ChevronLeft, ChevronRight,
@@ -95,7 +95,7 @@ export default function DashboardBuilder() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-layout', selectedRole],
     queryFn: () => api.get(`/dashboard/layouts?role=${selectedRole}`).then(r => r.data.data || r.data || []).catch(() => []),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {

@@ -216,6 +216,20 @@ function ThemeCard({ theme, isActive, isSystem, onActivate, onEdit, onDelete, on
   );
 }
 
+// Map builtin theme keys to branding setting keys
+const BUILTIN_TO_BRANDING = {
+  primary:       'primary_color',
+  secondary:     'secondary_color',
+  accent:        'accent_color',
+  success:       'success_color',
+  danger:        'danger_color',
+  warning:       'warning_color',
+  info:          'info_color',
+  font_family:   'font_family',
+  button_radius: 'button_radius',
+  card_radius:   'card_border_radius',
+};
+
 export default function ThemesPage() {
   const qc = useQueryClient();
   const { refresh } = useBranding();
@@ -223,6 +237,7 @@ export default function ThemesPage() {
   const [editTheme, setEditTheme] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
+  const [localActiveId, setLocalActiveId] = useState(null);
 
   const { data: themes = [], isLoading, isError } = useQuery({
     queryKey: ['themes'],
@@ -233,7 +248,7 @@ export default function ThemesPage() {
     queryKey: ['active-theme'],
     queryFn: () => api.get('/themes/active').then(r => r.data.data || r.data).catch(() => null),
   });
-  const activeThemeId = activeThemeData?.id;
+  const activeThemeId = localActiveId || activeThemeData?.id;
 
   const activateMutation = useMutation({
     mutationFn: (id) => api.post(`/themes/${id}/activate`).then(r => r.data),
@@ -260,6 +275,31 @@ export default function ThemesPage() {
   });
 
   function handleActivate(id) {
+    // Builtin themes have no DB record — apply locally and persist via branding settings
+    if (String(id).startsWith('builtin-')) {
+      const slug = String(id).replace('builtin-', '');
+      const config = BUILTIN_THEMES[slug];
+      if (!config) return;
+
+      setActivatingId(id);
+      applyTheme(config);
+
+      const settings = Object.entries(BUILTIN_TO_BRANDING)
+        .filter(([src]) => config[src] != null)
+        .map(([src, dst]) => ({ key: dst, value: String(config[src]) }));
+
+      api.post('/branding', { settings })
+        .then(() => {
+          toast.success('Theme activated');
+          setLocalActiveId(id);
+          refresh();
+        })
+        .catch(() => toast.error('Failed to save theme'))
+        .finally(() => setActivatingId(null));
+
+      return;
+    }
+
     setActivatingId(id);
     activateMutation.mutate(id);
   }

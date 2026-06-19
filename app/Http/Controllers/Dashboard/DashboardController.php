@@ -86,8 +86,8 @@ class DashboardController extends Controller
                 FROM bookings
                 WHERE hall_id = halls.id
                   AND status = \'approved\'
-                  AND CAST(strftime(\'%m\', booking_date) AS INTEGER) = ' . $month . '
-                  AND CAST(strftime(\'%Y\', booking_date) AS INTEGER) = ' . $year . '
+                  AND MONTH(booking_date) = ' . $month . '
+                  AND YEAR(booking_date) = ' . $year . '
             ) as total_minutes'),
         ])
         ->get();

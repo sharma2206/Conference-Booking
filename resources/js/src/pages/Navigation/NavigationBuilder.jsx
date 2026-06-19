@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, ChevronRight, ChevronDown, GripVertical,
-  Edit2, Trash2, Plus, ChevronUp, Save, Eye, EyeOff,
+  Edit2, Trash2, Plus, ChevronUp, Save, Eye, EyeOff, X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';

@@ -184,7 +184,7 @@ export default function EmailBrandingPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('field', 'email_logo');
+      fd.append('key', 'email_logo');
       const r = await api.post('/branding/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setForm(p => ({ ...p, logo_url: r.data.url || r.data.data?.url }));
       toast.success('Logo uploaded');

@@ -192,8 +192,14 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('holidays', [SettingsController::class, 'holidays']);
         Route::get('workflows', [SettingsController::class, 'approvalWorkflows']);
     });
+    Route::middleware('permission:settings.view')->prefix('settings')->group(function () {
+        Route::get('smtp', [SettingsController::class, 'smtpSettings']);
+    });
+
     Route::middleware('permission:settings.update')->prefix('settings')->group(function () {
         Route::put('/', [SettingsController::class, 'update']);
+        Route::put('smtp', [SettingsController::class, 'updateSmtp']);
+        Route::post('smtp/test', [SettingsController::class, 'testSmtp']);
         Route::post('holidays', [SettingsController::class, 'storeHoliday']);
         Route::put('holidays/{holiday}', [SettingsController::class, 'updateHoliday']);
         Route::delete('holidays/{holiday}', [SettingsController::class, 'destroyHoliday']);
@@ -206,7 +212,10 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
         Route::get('branding', [BrandingController::class, 'index']);
         Route::get('branding/css-variables', [BrandingController::class, 'cssVariables']);
         Route::get('themes', [ThemeController::class, 'index']);
-        Route::get('themes/{theme}', [ThemeController::class, 'show']);
+        // Static named routes MUST come before {theme} wildcard
+        Route::get('themes/active',   [ThemeController::class, 'active']);
+        Route::get('themes/builtins', [ThemeController::class, 'builtins']);
+        Route::get('themes/{theme}',  [ThemeController::class, 'show']);
         Route::get('menus', [MenuController::class, 'index']);
         Route::get('modules', [DynamicModuleController::class, 'index']);
         Route::get('modules/{module}', [DynamicModuleController::class, 'show']);

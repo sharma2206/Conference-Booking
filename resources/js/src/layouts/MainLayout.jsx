@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -13,6 +14,7 @@ import {
 import { logoutUser } from '../store/authSlice';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
+import { useBranding } from '../contexts/BrandingContext';
 import { cn } from '../lib/utils';
 import api from '../api/axios';
 import { API } from '../api/endpoints';
@@ -132,11 +134,100 @@ export default function MainLayout({ children }) {
   const [notifications, setNotifications] = useState([]);
 
   const { user, hasPermission }       = useAuth();
+  const { branding }                  = useBranding();
 
-  // Filter nav items — separators shown when user has the required permission
-  const visibleItems = NAV_ITEMS.filter(item =>
-    !item.permission || hasPermission(item.permission)
-  );
+  const companyName  = branding.company_name  || 'Conference Booking';
+  const logoUrl      = branding.logo_url      || null;
+  const primaryColor = branding.primary_color || '#3b82f6';
+
+  // Fetch navigation config from Navigation Builder
+  const { data: menuData } = useQuery({
+    queryKey: ['menus-sidebar'],
+    queryFn: () => api.get('/menus').then(r => r.data.data || r.data).catch(() => []),
+    staleTime: 60_000,
+  });
+
+  // Fetch active modules to know which sections to hide
+  const { data: modulesData } = useQuery({
+    queryKey: ['modules-sidebar'],
+    queryFn: () => api.get('/modules').then(r => r.data.data || r.data).catch(() => []),
+    staleTime: 60_000,
+  });
+
+  // Map module slugs → route prefixes they gate
+  const MODULE_ROUTE_MAP = {
+    halls:       ['/halls'],
+    bookings:    ['/bookings', '/calendar', '/approvals'],
+    users:       ['/users', '/roles'],
+    departments: ['/departments'],
+    visitors:    ['/visitors'],
+    catering:    ['/catering'],
+    resources:   ['/resources'],
+    reports:     ['/reports'],
+    audit:       ['/audit-logs'],
+  };
+
+  // Build set of disabled route prefixes from inactive modules
+  const disabledPaths = useMemo(() => {
+    if (!Array.isArray(modulesData) || modulesData.length === 0) return new Set();
+    const disabled = new Set();
+    modulesData.forEach(mod => {
+      if (mod.is_active === false) {
+        const routes = MODULE_ROUTE_MAP[mod.slug] || MODULE_ROUTE_MAP[mod.key] || [];
+        routes.forEach(r => disabled.add(r));
+      }
+    });
+    return disabled;
+  }, [modulesData]);
+
+  // Build a lookup map: route → { is_active, sort_order, label }
+  const menuConfig = useMemo(() => {
+    if (!Array.isArray(menuData) || menuData.length === 0) return null;
+    return new Map(menuData.map(item => [item.route || item.url || '', item]));
+  }, [menuData]);
+
+  // Filter and apply nav builder visibility/labels + module gating to sidebar items
+  const visibleItems = useMemo(() => {
+    const byPermission = NAV_ITEMS.filter(item =>
+      !item.permission || hasPermission(item.permission)
+    );
+
+    // Pass 1: determine visible regular items
+    const itemsByPath = new Map();
+    byPermission.forEach(item => {
+      if (item.type === 'separator') return;
+      // Module gating — hide if the module is disabled
+      if (disabledPaths.has(item.path)) return;
+      // Nav builder visibility
+      const cfg = menuConfig?.get(item.path);
+      if (cfg && cfg.is_active === false) return;
+      itemsByPath.set(item.path, {
+        ...item,
+        label: cfg?.label || item.label,
+        sort_order: cfg?.sort_order ?? 999,
+      });
+    });
+
+    // Pass 2: rebuild preserving separators, skip empty sections
+    const result = [];
+    let pendingSeparator = null;
+    let sectionHasItems = false;
+
+    byPermission.forEach(item => {
+      if (item.type === 'separator') {
+        if (pendingSeparator && sectionHasItems) result.push(pendingSeparator);
+        pendingSeparator = item;
+        sectionHasItems = false;
+        return;
+      }
+      if (!itemsByPath.has(item.path)) return;
+      sectionHasItems = true;
+      result.push(itemsByPath.get(item.path));
+    });
+    if (pendingSeparator && sectionHasItems) result.push(pendingSeparator);
+
+    return result;
+  }, [menuConfig, disabledPaths, hasPermission]);
   const { isDark, toggle: toggleTheme } = useTheme();
   const dispatch                     = useDispatch();
   const location                     = useLocation();
@@ -144,6 +235,9 @@ export default function MainLayout({ children }) {
   const notifRef                     = useRef(null);
   const userMenuRef                  = useRef(null);
   const breadcrumbs                  = useBreadcrumbs();
+
+  // Update document title from branding
+  useEffect(() => { document.title = companyName; }, [companyName]);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -260,15 +354,18 @@ export default function MainLayout({ children }) {
       >
         {/* Brand */}
         <div className="flex items-center h-16 border-b border-slate-800 dark:border-slate-700 flex-shrink-0 px-3 gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-            <Building2 className="h-4 w-4 text-white" aria-hidden="true" />
+          <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: logoUrl ? 'transparent' : primaryColor }}>
+            {logoUrl
+              ? <img src={logoUrl} alt={companyName} className="h-8 w-8 object-contain" />
+              : <Building2 className="h-4 w-4 text-white" aria-hidden="true" />
+            }
           </div>
           <span className={cn(
             'text-white font-semibold text-sm truncate flex-1',
             'md:hidden',
             !collapsed && 'lg:block',
           )}>
-            Conference Booking
+            {companyName}
           </span>
           <button
             onClick={() => setMobileOpen(false)}

@@ -198,7 +198,7 @@ export default function ModulesPage() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) => api.patch(`/modules/${id}`, { is_active: !is_active }).then(r => r.data),
+    mutationFn: ({ id }) => api.post(`/modules/${id}/toggle`).then(r => r.data),
     onSuccess: () => { toast.success('Module status updated'); qc.invalidateQueries({ queryKey: ['modules'] }); setTogglingId(null); },
     onError: () => { toast.error('Failed to update module'); setTogglingId(null); },
   });

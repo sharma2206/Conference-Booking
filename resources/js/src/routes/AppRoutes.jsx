@@ -29,6 +29,9 @@ const SettingsPage    = lazy(() => import('../pages/Settings/SettingsPage'));
 const ProfilePage     = lazy(() => import('../pages/Profile/ProfilePage'));
 const NotificationsPage = lazy(() => import('../pages/Notifications/NotificationsPage'));
 
+// Custom pages from Page Builder — lazy loaded
+const CustomPageRenderer = lazy(() => import('../pages/CustomPage/CustomPageRenderer'));
+
 // White-label & branding pages — lazy loaded
 const BrandingPage       = lazy(() => import('../pages/Branding/BrandingPage'));
 const ThemesPage         = lazy(() => import('../pages/Branding/ThemesPage'));
@@ -122,6 +125,11 @@ export default function AppRoutes() {
       {/* ── Settings — requires settings.view ──────────────── */}
       <Route element={<ProtectedRoute permission="settings.view" />}>
         <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+
+      {/* ── Custom pages from Page Builder — authenticated users ─ */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/pages/:slug" element={<CustomPageRenderer />} />
       </Route>
 
       {/* ── White-label & Branding — requires settings.view ─ */}
