@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Setting;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -58,6 +59,13 @@ class Hall extends Model
 
     public function isAvailable(string $date, string $startTime, string $endTime, ?int $excludeBookingId = null): bool
     {
+        // Apply configurable buffer so back-to-back bookings have a gap
+        $bufferMinutes = (int) Setting::get('booking_buffer_minutes', 0);
+        if ($bufferMinutes > 0) {
+            $startTime = \Carbon\Carbon::parse($startTime)->subMinutes($bufferMinutes)->format('H:i:s');
+            $endTime   = \Carbon\Carbon::parse($endTime)->addMinutes($bufferMinutes)->format('H:i:s');
+        }
+
         $query = $this->bookings()
             ->whereIn('status', ['pending', 'approved'])
             ->where('booking_date', $date)

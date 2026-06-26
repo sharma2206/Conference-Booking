@@ -31,7 +31,7 @@ class ReportController extends Controller
             ->when($request->hall_id, fn($q, $v) => $q->where('hall_id', $v))
             ->when($request->department_id, fn($q, $v) => $q->where('department_id', $v))
             ->orderByDesc('booking_date')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min(100, max(1, (int) ($request->per_page ?? 20))));
 
         return response()->json($bookings);
     }
@@ -51,10 +51,11 @@ class ReportController extends Controller
             'bookings as approved_bookings' => fn($q) => $q->whereMonth('booking_date', $month)->whereYear('booking_date', $year)->where('status', 'approved'),
             'bookings as cancelled_bookings' => fn($q) => $q->whereMonth('booking_date', $month)->whereYear('booking_date', $year)->where('status', 'cancelled'),
         ])
-        ->addSelect([
-            '*',
-            DB::raw("(SELECT SUM(duration_minutes) FROM bookings WHERE hall_id = halls.id AND status='approved' AND MONTH(booking_date)={$month} AND YEAR(booking_date)={$year}) as total_minutes"),
-        ])
+        ->withSum([
+            'bookings as total_minutes' => fn($q) => $q->where('status', 'approved')
+                ->whereMonth('booking_date', $month)
+                ->whereYear('booking_date', $year),
+        ], 'duration_minutes')
         ->get();
 
         return response()->json(['data' => $halls]);
@@ -118,7 +119,13 @@ class ReportController extends Controller
             ->limit(500)
             ->get();
 
-        $pdf = Pdf::loadView("reports.{$request->type}", [
+        $view = match ($request->type) {
+            'bookings'    => 'reports.bookings',
+            'halls'       => 'reports.halls',
+            'departments' => 'reports.departments',
+        };
+
+        $pdf = Pdf::loadView($view, [
             'bookings' => $bookings,
             'generated_at' => now(),
             'filters' => $request->all(),
@@ -129,6 +136,8 @@ class ReportController extends Controller
 
     public function monthly(Request $request): JsonResponse
     {
+        $request->validate(['year' => ['nullable', 'integer', 'min:2020', 'max:2100']]);
+
         $year = $request->year ?? now()->year;
 
         $data = Booking::select(

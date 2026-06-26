@@ -108,3 +108,25 @@ jobs:
 
       - name: Build assets
         run: npm run build
+
+      - name: NPM security audit
+        run: npm audit --audit-level=high
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Composer security audit
+        run: composer audit

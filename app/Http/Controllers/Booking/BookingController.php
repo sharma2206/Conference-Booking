@@ -72,8 +72,15 @@ class BookingController extends Controller
     {
         $request->validate([
             'start' => ['required', 'date'],
-            'end'   => ['required', 'date'],
+            'end'   => ['required', 'date', 'after_or_equal:start'],
         ]);
+
+        // Prevent unbounded queries — cap at 90 days
+        $start = \Carbon\Carbon::parse($request->start);
+        $end   = \Carbon\Carbon::parse($request->end);
+        if ($start->diffInDays($end) > 90) {
+            return response()->json(['message' => 'Date range cannot exceed 90 days.'], 422);
+        }
 
         $user    = auth('api')->user();
         $isAdmin = $user->hasAnyRole(['super-admin', 'admin', 'facility-manager']);

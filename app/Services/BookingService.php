@@ -48,6 +48,8 @@ class BookingService
 
         if (auth()->user()->hasRole('employee')) {
             $query->where('user_id', auth()->id());
+        } elseif (auth()->user()->hasRole('department-head')) {
+            $query->where('department_id', auth()->user()->department_id);
         }
 
         return $query->paginate($perPage);
@@ -60,6 +62,10 @@ class BookingService
         $this->checkAvailability($data['hall_id'], $data['booking_date'], $data['start_time'], $data['end_time']);
 
         return DB::transaction(function () use ($data) {
+            // Prevent race condition: lock the hall row before conflict check
+            Hall::where('id', $data['hall_id'])->lockForUpdate()->first();
+            $this->checkAvailability($data['hall_id'], $data['booking_date'], $data['start_time'], $data['end_time']);
+
             $booking = Booking::create([
                 'booking_number'  => $this->generateBookingNumber(),
                 'title'           => $data['title'],
@@ -150,6 +156,16 @@ class BookingService
             throw ValidationException::withMessages([
                 'booking' => ['This booking cannot be cancelled.'],
             ]);
+        }
+
+        $minHours = (int) Setting::get('min_cancellation_hours', 2);
+        if ($minHours > 0) {
+            $bookingStart = Carbon::parse($booking->booking_date->toDateString() . ' ' . $booking->start_time);
+            if ($bookingStart->lt(now()->addHours($minHours))) {
+                throw ValidationException::withMessages([
+                    'booking' => ["Bookings must be cancelled at least {$minHours} hour(s) before the start time."],
+                ]);
+            }
         }
 
         $booking->update([

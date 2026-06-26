@@ -19,6 +19,8 @@ class SettingsSeeder extends Seeder
             ['group' => 'booking', 'key' => 'office_start_time', 'value' => '09:00', 'type' => 'string'],
             ['group' => 'booking', 'key' => 'office_end_time', 'value' => '18:00', 'type' => 'string'],
             ['group' => 'booking', 'key' => 'booking_allowed_days', 'value' => '["1","2","3","4","5"]', 'type' => 'json'],
+            ['group' => 'booking', 'key' => 'booking_buffer_minutes', 'value' => '0', 'type' => 'integer'],
+            ['group' => 'booking', 'key' => 'min_cancellation_hours', 'value' => '2', 'type' => 'integer'],
             ['group' => 'notifications', 'key' => 'notify_on_create', 'value' => '1', 'type' => 'boolean'],
             ['group' => 'notifications', 'key' => 'notify_on_approve', 'value' => '1', 'type' => 'boolean'],
             ['group' => 'notifications', 'key' => 'notify_on_reject', 'value' => '1', 'type' => 'boolean'],

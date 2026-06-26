@@ -8,6 +8,7 @@ use App\Models\BookingApproval;
 use App\Models\User;
 use App\Notifications\ApprovalRequiredNotification;
 use App\Notifications\BookingStatusNotification;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,7 +16,9 @@ class ApprovalService
 {
     public function initiateApproval(Booking $booking): void
     {
-        $workflow = ApprovalWorkflow::where('is_default', true)->where('is_active', true)->first();
+        $workflow = Cache::remember('default_approval_workflow', 300, fn () =>
+    ApprovalWorkflow::with('steps')->where('is_default', true)->where('is_active', true)->first()
+);
 
         if (!$workflow || $workflow->steps->isEmpty()) {
             $booking->update(['status' => 'approved', 'approved_at' => now(), 'current_approval_step' => 0]);
@@ -54,7 +57,9 @@ class ApprovalService
                 'approved_at' => now(),
             ]);
 
-            $workflow = ApprovalWorkflow::where('is_default', true)->where('is_active', true)->first();
+            $workflow = Cache::remember('default_approval_workflow', 300, fn () =>
+    ApprovalWorkflow::with('steps')->where('is_default', true)->where('is_active', true)->first()
+);
             $nextStep = $workflow?->steps
                 ->where('step_order', '>', $booking->current_approval_step)
                 ->first();
